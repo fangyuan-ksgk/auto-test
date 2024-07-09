@@ -1,12 +1,11 @@
-# auto-test
-Automatic Chat with LLM &amp; Test
+# Auto-Test
+Comprehensive evaluation suite for production-ready AI models.
 
-For production-ready model, we view its quality issues divisible. Objective quality issues and Subjective quality issues.
-### Objective Issues: Harmful & Illegal response, In-coherent response, Out-of-Character response 
-These issues can be "Detected" through simulation & detection. 
+**Objective Issue Detection: Identifies safety, coherence, and contextual problems through automated testing.
+**Subjective Quality Assessment: Evaluates user experience and style alignment using AI-assisted tools and human feedback.
+**Continuous Monitoring: Provides real-time performance tracking and improvement suggestions.
 
-### Subjective Evaluation: Whether the response is funny enough, whether the response is xxx enough
-These issues require aligning with human preference. 
+Ensures both technical reliability and user satisfaction for deployed AI models.
 
 Requireed API KEYs in the environment variable
 
