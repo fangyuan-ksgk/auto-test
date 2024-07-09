@@ -7,6 +7,9 @@ Comprehensive evaluation suite for production-ready AI models.
 
 Ensures both technical reliability and user satisfaction for deployed AI models.
 
+![Uploading image.png…]()
+
+
 Requireed API KEYs in the environment variable
 
 ```shell
