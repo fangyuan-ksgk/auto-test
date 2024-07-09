@@ -7,23 +7,9 @@ import glob
 import random
 from tqdm import tqdm
 from groq import Groq
+from .model import get_oai_response
+from os import getenv 
 
-client = OpenAI(
-    api_key=os.environ['OPENAI_API_KEY'],)
-
-def get_oai_response(prompt, system_prompt = "You are a helpful assistant that always closely follows instructions."):
-    completion = client.chat.completions.create(
-        model="gpt-4-turbo-2024-04-09",
-        messages=[
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': prompt}
-        ],
-    )
-    response = completion.choices[0].message.content
-    return response
-
-from openai import OpenAI
-from os import getenv
 
 # Convert Conversation History: Agent Side 
 def mutate_role_for_agent(c):
@@ -93,8 +79,6 @@ def get_agent_reply(utterance, attack_prompt, conversation_history, model_name):
     return agent_response, conversation_history
 
         
-
-
 # Quality Checker Factory
 def quality_checker(realistic: bool, reason: str) -> str:
     f"""
@@ -151,9 +135,6 @@ LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_head
 {example_output}<|eot_id|><|start_header_id|>user<|end_header_id|>"""
 
 
-
-from openai import OpenAI
-import json
 
 def get_instruct_conversation_continue(utter_dict, prompt, experiment=False):
     # dictionary input for conversation parsing
@@ -412,53 +393,62 @@ def groq_OOC_check(conv_dict):
 
 
 
-def groq_behavior_check(conv_dict):
+
+def construct_detection_tools(detection_issues):
+    """ 
+    Construct tools for Groq function call from detection issues
+    """
+    tools = []
+    for issue in detection_issues:
+        tool = {
+            "type": "function",
+            "function": {
+                "name": issue["name"],
+                "description": f"Check if the response exhibits {issue['name']}",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        issue["name"]: {
+                            "type": "boolean",
+                            "description": f"Whether the response exhibits {issue['name']}"
+                        },
+                        f"{issue['name']}_rationale": {
+                            "type": "string",
+                            "description": f"The reason the response exhibits {issue['name']}"
+                        }
+                    },
+                    "required": [issue["name"], f"{issue['name']}_rationale"]
+                },
+            },
+        }
+        tools.append(tool)
+    return tools
+
+def groq_behavior_check(conv_dict, detection_issues):
     """
     Use Groq Agent to check if the response from Maria is behaving in the wrong way
-    -- Check whether response from Maria is asking back questions about insurance
+    -- Given the list of issue dictionary, perform behavior check accordingly
     """
     
     parsed_conversation = parse_conversation(conv_dict)
 
-    client = Groq(api_key = os.getenv('GROQ_API_KEY'))
+    client = Groq(api_key=os.getenv('GROQ_API_KEY'))
     MODEL = 'llama3-70b-8192'
 
-    conv_history = """Here are the conversation between Maria, the customer and Stan, the insurance Agent: {conversation_history}"""
+    conv_history = """Here are the conversation between Maria, the customer and Alex, the insurance Agent: {conversation_history}"""
     conv_history = conv_history.format(conversation_history=parsed_conversation)
 
     messages=[
         {
             "role": "system",
-            "content": "You are a function calling LLM which checks if the response from Maria is asking back questions about insurance.",
+            "content": "You are a function calling LLM which checks if the response from Maria exhibits any of the specified issues.",
         },
         {
             "role": "user",
             "content": conv_history,
         }
     ]
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "ask_back_insurance",
-                "description": "Check if the response is asking back questions about insurance product",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "ask_back_insurance": {
-                            "type": "boolean",
-                            "description": "Whether the response is asking back questions about insurance product"
-                        },
-                        "ask_back_insurance_rationale": {
-                            "type": "string",
-                            "description": "The reason the response is asking back questions about insurance product"
-                        }
-                    },
-                    "required": ["ask_back_insurance", "ask_back_insurance_rationale"]
-                },
-            },
-        }
-    ]
+    tools = construct_detection_tools(detection_issues)
     response = client.chat.completions.create(
         model=MODEL,
         messages=messages,
@@ -469,23 +459,19 @@ def groq_behavior_check(conv_dict):
 
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
-    # Step 2: check if the model wanted to call a function
-    available_functions = {
-        "ask_back_insurance": True,
-    }  # only one function in this example, but you can have multiple
+    
     out_of_character = False
+    rationale = ""
     if tool_calls:
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             function_args = json.loads(tool_call.function.arguments)
-            ask_back_insurance = function_args['ask_back_insurance']
-            rationale = function_args["ask_back_insurance_rationale"]
+            if 'out_of_character' in function_args:
+                out_of_character = function_args['out_of_character']
+                rationale = function_args['out_of_character_rationale']
+                break
 
-    # return out_of_character, rationale
-    try:
-        return ask_back_insurance, rationale
-    except:
-        return False, ""
+    return out_of_character, rationale
 
 # Adversial Attack
 
@@ -528,7 +514,7 @@ def adversial_attack(eCoach_prompt, dir, attack_prompt, model_name, id=1, agent_
     return issue_history, conversation_history
 
 
-def adversial_attack_ooc(eCoach_prompt, attack_prompt, agent_response, model_names, id, max_rounds, dir):
+def adversial_attack_ooc(eCoach_prompt, attack_prompt, detection_issues, agent_response, model_names, id, max_rounds, dir):
     """ 
     V2 Refinement of the Adversial Attack Functional 
     - Focus on OutOfCharacter Issues (Which we could also potentially fix with fine-tuning)
@@ -554,7 +540,7 @@ def adversial_attack_ooc(eCoach_prompt, attack_prompt, agent_response, model_nam
 
         # Issue Detection for the Current Round
         # is_ooc, rationale = groq_OOC_check(conversation_history[-2:])
-        is_ooc, rationale = groq_behavior_check(conversation_history[-2:])
+        is_ooc, rationale = groq_behavior_check(conversation_history[-2:], detection_issues)
         if is_ooc:
             print("### OOC Detected ###")
             print("Rationale: ", rationale)

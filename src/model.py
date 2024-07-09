@@ -5,9 +5,17 @@ from os import getenv
 import torch
 import transformers
 from huggingface_hub import login
+from openai import OpenAI
+import os
 
-HF_TOKEN = "YOUR_HF_TOKEN"
+HF_TOKEN = getenv("HF_TOKEN")
+ANTHROPIC_API_KEY = "YOUR_API_KEY"
+OPENAI_API_KEY = "YOUR_API_KEY"
+OPENROUTER_API_KEY = "OPENROUTER_API_KEY"
+
 client = Anthropic(api_key=getenv("ANTHROPIC_API_KEY"))
+oai_client = OpenAI(
+    api_key=getenv('OPENAI_API_KEY'))
 
 def get_claude_response(prompt):
     """ 
@@ -25,6 +33,21 @@ def get_claude_response(prompt):
             }
         ]
     )
+    return response
+
+
+def get_oai_response(prompt, system_prompt = "You are a helpful assistant that always closely follows instructions."):
+    """ 
+    Get response from OAI Model
+    """
+    completion = client.chat.completions.create(
+        model="gpt-4-turbo-2024-04-09",
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': prompt}
+        ],
+    )
+    response = completion.choices[0].message.content
     return response
 
 
