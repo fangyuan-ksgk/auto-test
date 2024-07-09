@@ -7,7 +7,7 @@ Comprehensive evaluation suite for production-ready AI models.
 
 Ensures both technical reliability and user satisfaction for deployed AI models.
 
-![Uploading image.png…]()
+![image](https://github.com/fangyuan-ksgk/auto-test/assets/66006349/0baab3ac-c0e6-4ded-937a-95060fd60aea)
 
 
 Requireed API KEYs in the environment variable
