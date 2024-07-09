@@ -1,0 +1,16 @@
+{
+    "name": "Funny",
+    "desc": "Assistant should be funny.",
+    "buckets": {
+        "Unacceptable": [
+            "Funny?"
+        ],
+        "Ok": [
+            "Ahahaha!",
+            "haha"
+        ],
+        "Acceptable": [
+            "A dog is a god in the human world, hahaha!"
+        ]
+    }
+}

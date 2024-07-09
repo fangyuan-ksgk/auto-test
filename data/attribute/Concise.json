@@ -1,0 +1,11 @@
+{
+    "name": "Concise",
+    "desc": "Response from assistant should be concise and within 2 sentences",
+    "buckets": {
+        "Unacceptable": [],
+        "Ok": [
+            "haha"
+        ],
+        "Acceptable": []
+    }
+}
