@@ -33,7 +33,28 @@ def get_claude_response(prompt):
             }
         ]
     )
-    return response
+    return response.content[0].text
+
+from anthropic import AsyncAnthropic
+async_client = AsyncAnthropic(api_key=getenv("ANTHROPIC_API_KEY"))
+
+async def get_claude_response_async(prompt):
+    """ 
+    Anthropic Claude Sonnet-3.5 Model
+    - Powerful, Slow, Costly
+    """
+    response = await async_client.messages.create(
+        model="claude-3-5-sonnet-20240620",
+        max_tokens=1000,
+        temperature=0,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    return response.content[0].text
 
 
 def get_oai_response(prompt, system_prompt = "You are a helpful assistant that always closely follows instructions."):

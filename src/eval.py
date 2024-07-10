@@ -1,6 +1,7 @@
 from .attribute import Requirement, Attribute
-from .model import get_claude_response
+from .model import get_claude_response, get_claude_response_async
 from typing import Callable, Union
+import asyncio
 
 # Two Approach to Evaluation 
 # - 1. Direct Bucket Selection | Direct & Cheap
@@ -100,7 +101,7 @@ def parse_compare_bucket_response(response: str) -> Union[str, bool]:
         return False
     
 
-def direct_bucket_eval(conversation: str, attribute: Attribute) -> str:
+async def direct_bucket_eval(conversation: str, attribute: Attribute) -> str:
     """ 
     Direct request for Absolute Scroing
     - Output is a bucket: Unacceptable / Ok / Acceptable
@@ -109,13 +110,13 @@ def direct_bucket_eval(conversation: str, attribute: Attribute) -> str:
         info=attribute.info,
         conversation=conversation
     )
-    response = get_claude_response(prompt)
+    response = await get_claude_response_async(prompt)
     
-    bucket = parse_direct_bucket_response(response.content[0].text)
+    bucket = parse_direct_bucket_response(response)
     return bucket
 
 
-def compare_bucket_eval(conversation: str, attribute: Attribute) -> str:
+async def compare_bucket_eval(conversation: str, attribute: Attribute) -> str:
     """ 
     Compare request for Relative Scoring
     - Compared with available response in some bucket
@@ -129,8 +130,8 @@ def compare_bucket_eval(conversation: str, attribute: Attribute) -> str:
         conversation=conversation,
         bucket_conversation=ok_bucket.get_random_response()
     )
-    response = get_claude_response(prompt)
-    choice = parse_compare_bucket_response(response.content[0].text)
+    response = await get_claude_response_async(prompt)
+    choice = parse_compare_bucket_response(response)
     
     if choice == "A":  # If better than Ok
         # Compare with Acceptable bucket
@@ -140,8 +141,8 @@ def compare_bucket_eval(conversation: str, attribute: Attribute) -> str:
             conversation=conversation,
             bucket_conversation=acceptable_bucket.get_random_response()
         )
-        response = get_claude_response(prompt)
-        choice = parse_compare_bucket_response(response.content[0].text)
+        response = await get_claude_response(prompt)
+        choice = parse_compare_bucket_response(response)
         return "Acceptable" if choice == "A" else "Ok"
     else:  # If not better than Ok
         # Compare with Unacceptable bucket
@@ -151,8 +152,8 @@ def compare_bucket_eval(conversation: str, attribute: Attribute) -> str:
             conversation=conversation,
             bucket_conversation=unacceptable_bucket.get_random_response()
         )
-        response = get_claude_response(prompt)
-        choice = parse_compare_bucket_response(response.content[0].text)
+        response = await get_claude_response(prompt)
+        choice = parse_compare_bucket_response(response)
         return "Unacceptable" if choice == "B" else "Ok"
 
 
@@ -165,17 +166,42 @@ class AOEval:
         """
         self.requirement = requirement
 
-    def direct_eval(self, conversation: str, attribute: Attribute) -> str:
-        bucket = direct_bucket_eval(conversation, attribute)
+    async def _direct_eval(self, conversation: str, attribute: Attribute) -> str:
+        bucket = await direct_bucket_eval(conversation, attribute)
         return bucket 
     
-    def compare_eval(self, conversation: str, attribute: Attribute) -> str:
+    async def _compare_eval(self, conversation: str, attribute: Attribute) -> str:
         try:
-            bucket = compare_bucket_eval(conversation, attribute)
+            bucket = await compare_bucket_eval(conversation, attribute)
             return bucket
         except:
             # Likely having empty buckets up to now
-            return self.direct_eval(conversation, attribute)
+            return await self._direct_eval(conversation, attribute)
+        
+    async def direct_eval(self, conversation: str):
+        """ 
+        evaluate on all attributes in async fashion
+        """
+        tasks = []
+        for attribute in self.requirement.attributes:
+            task = asyncio.create_task(self._direct_eval(conversation, attribute))
+            tasks.append(task)
+        
+        results = await asyncio.gather(*tasks)
+        return dict(zip([attr.name for attr in self.requirement.attributes], results))
+    
+
+    async def compare_eval(self, conversation: str):
+        """
+        evaluate on all attributes in async fashion using compare method
+        """
+        tasks = []
+        for attribute in self.requirement.attributes:
+            task = asyncio.create_task(self._compare_eval(conversation, attribute))
+            tasks.append(task)
+        
+        results = await asyncio.gather(*tasks)
+        return dict(zip([attr.name for attr in self.requirement.attributes], results))
 
     def parse_bucket(self, response: str) -> str:
         for bucket in ["Unacceptable", "Ok", "Acceptable"]:
@@ -200,9 +226,10 @@ class AOEval:
             else:
                 print("Invalid choice. Please enter 'a' or 'c'.")
 
-    def evaluate_and_annotate(self, conversation: str):
+    async def evaluate_and_annotate(self, conversation: str):
+        evaluation_results = await self.compare_eval(conversation)
         for attribute in self.requirement.attributes:
-            suggested_bucket = self.compare_eval(conversation, attribute)
+            suggested_bucket = evaluation_results[attribute.name]
             final_bucket = self.human_annotation(conversation, attribute, suggested_bucket)
             attribute.update_bucket(final_bucket, conversation)
 
