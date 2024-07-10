@@ -3,8 +3,9 @@ Comprehensive evaluation suite for production-ready AI models.
 
 * Objective Issue Detection: Identifies safety, coherence, and contextual problems through automated testing.
 ```python
-python -m src.detect
+python -m src.detect 
 ```
+Note that '-m 0' detects issue for the fine-tuned model, while '-m 1' detects issue for the baseline model. 
 
 * Subjective Assessment w. Human Supervision: Evaluates user experience and style alignment using AI-assisted tools and human feedback. This mode asks for Human acceptance of the evaluation result. All human-supervised evaluation result will be stored and used for future evaluation & alignment. 
 ```python
