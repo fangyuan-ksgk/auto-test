@@ -124,6 +124,8 @@ def parse_messages(text):
                     break
     return messages
 
+import json
+from openai import OpenAI
 
 # Comment: This template is super weird -- why do we put example input & output as if they are part of the conversation (?)
 LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
@@ -134,173 +136,122 @@ LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_head
 
 {example_output}<|eot_id|><|start_header_id|>user<|end_header_id|>"""
 
+BASE_MODEL_URL = "http://ec2-13-229-24-160.ap-southeast-1.compute.amazonaws.com:8000/v1"
+BASE_MODEL_NAME = "MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ"
+FINETUNE_MODEL_URL = "http://43.218.240.61:8000/v1"
+FINETUNE_MODEL_NAME = "Ksgk-fy/ecoach_philippine_v2_merge"
 
 
-def get_instruct_conversation_continue(utter_dict, prompt, experiment=False):
-    # dictionary input for conversation parsing
-    if experiment:
-        client = OpenAI(api_key="EMPTY", base_url="http://43.218.240.61:8000/v1")
-    else:    
-        client = OpenAI(api_key="EMPTY", base_url="http://ec2-13-229-24-160.ap-southeast-1.compute.amazonaws.com:8000/v1")
-    conversation_history = []
+class VLLM_MODEL: 
+    """
+    vLLM served model class
+    """
+    def __init__(self, model_name, base_url):
+        self.model_name = model_name
+        self.base_url = base_url
+        self.client = OpenAI(api_key="EMPTY", base_url=base_url)
+
+    def get_completion(self, prompt, max_tokens=512, temperature=0.0, stop=None):
+        response = self.client.completions.create(
+            model=self.model_name,
+            prompt=prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stop=stop,
+            stream=False,
+            extra_body={
+                "repetition_penalty": 1.1,
+                "length_penalty": 1.0,
+                "min_tokens": 0,
+            },
+        )
+        return response.choices[0].text.strip()
+
+    def get_streaming_completion(self, prompt, max_tokens=512, temperature=0.0, stop=None):
+        stream = self.client.completions.create(
+            model=self.model_name,
+            prompt=prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stop=stop,
+            stream=True,
+            extra_body={
+                "repetition_penalty": 1.1,
+                "length_penalty": 1.0,
+                "min_tokens": 0,
+            },
+        )
+        return stream
+
+class Agent:
+    """ 
+    vLLM served Agent LLM object
+    """
+    def __init__(self, model_name, base_url, tokenizer):
+        self.model = VLLM_MODEL(model_name, base_url)
+        self.tokenizer = tokenizer
+        self.conversation_history = []
+        
+    def format_prompt(self, system_prompt):
+        """
+        Format the prompt for the LLM using the conversation history and system prompt
+        """
+        completion = "####Dummy-Answer"
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(self.conversation_history)
+        messages.append({"role": "assistant", "content": completion})
+        format_prompt = self.tokenizer.apply_chat_template(messages, tokenize=False)
+        query_prompt = format_prompt.split(completion)[0]
+        return query_prompt 
+    
+    def get_response(self, user_input, system_prompt):
+        """
+        Get a response from the LLM based on the user input and system prompt
+        """
+        self.conversation_history.append({"role": "user", "content": user_input})
+        prompt = self.format_prompt(system_prompt)
+        response = self.model.get_completion(prompt)
+        self.conversation_history.append({"role": "assistant", "content": response})
+        return response
+    
+    def reset_conversation(self):
+        """
+        Reset the conversation history
+        """
+        self.conversation_history = []
+        
+def get_instruct_conversation_continue(utter_dict, prompt, experiment=False, tokenizer=None):
+    base_url = FINETUNE_MODEL_URL if experiment else BASE_MODEL_URL
+    agent = Agent(BASE_MODEL_NAME, base_url, tokenizer)
+    
     for key, item in utter_dict.items():
-        if key == "Customer":
-            conversation_history.append({"role": "You", "text": item})
-        else:
-            conversation_history.append({"role": "Agent", "text": item})
-    conversation = "\n".join([f"{x['role']}: {x['text'].strip()}" for x in conversation_history])
-    conversation += "\nYou:"
-    input_prompt = prompt + f"{conversation}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
-    agent_response = []
-    stream = client.completions.create(
-        model="MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ",
-        prompt=input_prompt,
-        max_tokens=512,
-        temperature=0.0,
-        stop=["<|eot_id|>"],
-        stream=True,
-        extra_body={
-            "repetition_penalty": 1.1,
-            "length_penalty": 1.0,
-            "min_tokens": 0,
-        },
-    )
-    for response in stream:
-        txt = response.choices[0].text
-        if txt == "\n":
-            continue
-        agent_response.append(txt)
-
-    agent_response_text = "".join(agent_response)
-    return agent_response_text
-
-
-def get_finetune_response(utterance, prompt):
-    client = OpenAI(api_key="EMPTY", base_url="http://43.218.240.61:8000/v1")  # Jarkata Server Fine-tuned llama3 + Lora adapted model response
-
-    conversation_history = []
-    user_input = utterance
-    conversation_history.append({"role": "Agent", "text": user_input})
-    conversation = "\n".join([f"{x['role']}: {x['text'].strip()}" for x in conversation_history])
-    conversation += "\nYou:"
-    input_prompt = prompt + f"{conversation}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
-
-    agent_response = []
-    stream = client.completions.create(
-        model = "Ksgk-fy/ecoach_philippine_v2_merge",
-        prompt=input_prompt,
-        max_tokens=512,
-        temperature=0.0,
-        stop=["<|eot_id|>"],
-        stream=True,
-        extra_body={
-            "repetition_penalty": 1.1,
-            "length_penalty": 1.0,
-            "min_tokens": 0,
-        },
-    )
-    for response in stream:
-        txt = response.choices[0].text
-        if txt == "\n":
-            continue
-        agent_response.append(txt)
-
-    agent_response_text = "".join(agent_response)
-    conversation_history.append({"role": "You", "text": agent_response_text})
-    return agent_response_text
-
-
-def get_instruct_response(utterance, prompt, experiment = False):
-    if experiment:
-        client = OpenAI(api_key="EMPTY", base_url="http://43.218.240.61:8000/v1")
-    else:
-        client = OpenAI(api_key="EMPTY", base_url="http://ec2-13-229-24-160.ap-southeast-1.compute.amazonaws.com:8000/v1")
-
-    conversation_history = []
-    user_input = utterance
-    conversation_history.append({"role": "Agent", "text": user_input})
-    conversation = "\n".join([f"{x['role']}: {x['text'].strip()}" for x in conversation_history])
-    conversation += "\nYou:"
-    input_prompt = prompt + f"{conversation}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
-
-    agent_response = []
-    stream = client.completions.create(
-        model="MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ",
-        prompt=input_prompt,
-        max_tokens=512,
-        temperature=0.0,
-        stop=["<|eot_id|>"],
-        stream=True,
-        extra_body={
-            "repetition_penalty": 1.1,
-            "length_penalty": 1.0,
-            "min_tokens": 0,
-        },
-    )
-    for response in stream:
-        txt = response.choices[0].text
-        if txt == "\n":
-            continue
-        agent_response.append(txt)
-
-    agent_response_text = "".join(agent_response)
-    conversation_history.append({"role": "You", "text": agent_response_text})
-    return agent_response_text
-
-
-def get_instruct_response_history(utterance, prompt, conversation_history: list = []):
-    client = OpenAI(api_key="EMPTY", base_url="http://ec2-13-229-24-160.ap-southeast-1.compute.amazonaws.com:8000/v1")
-
-    user_input = utterance
-    conversation_history.append({"role": "Agent", "text": user_input})
-    conversation = "\n".join([f"{x['role']}: {x['text'].strip()}" for x in conversation_history])
-    conversation += "\nYou:"
-    input_prompt = prompt + f"{conversation}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
-
-    agent_response = []
-    stream = client.completions.create(
-        model="MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ",
-        prompt=input_prompt,
-        max_tokens=512,
-        temperature=0.0,
-        stop=["<|eot_id|>"],
-        stream=True,
-    )
-    for response in stream:
-        txt = response.choices[0].text
-        if txt == "\n":
-            continue
-        agent_response.append(txt)
-
-    agent_response_text = "".join(agent_response)
-    conversation_history.append({"role": "You", "text": agent_response_text})
-    return agent_response_text, conversation_history
-
-
-def prepare_prompt_llama3(instructions):
-
-    example_input = """So FWD Set For Life is a life insurance policy that helps you earn some returns by investing your premiums"""
+        role = "user" if key == "Customer" else "assistant"
+        agent.conversation_history.append({"role": role, "content": item})
     
-    example_output = """Like, how does the investment part work? What kind of returns should I be looking at, pa-reh?"""
+    return agent.get_response("", prompt)
 
-    return LlAMA3_PROMPT_TEMPLATE.format(system_prompt=instructions, example_input=example_input, example_output=example_output)
+def get_finetune_response(utterance, prompt, tokenizer=None):
+    agent = Agent(FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL, tokenizer)
+    return agent.get_response(utterance, prompt)
 
+def get_instruct_response(utterance, prompt, experiment=False, tokenizer=None):
+    base_url = FINETUNE_MODEL_URL if experiment else BASE_MODEL_URL
+    agent = Agent(BASE_MODEL_NAME, base_url, tokenizer)
+    return agent.get_response(utterance, prompt)
 
-def get_llama_experiment_response(utterance, sys_prompt):
-    prompt = prepare_prompt_llama3(sys_prompt)
-    return get_finetune_response(utterance, prompt)
+def get_instruct_response_history(utterance, prompt, conversation_history=None, tokenizer=None):
+    agent = Agent(BASE_MODEL_NAME, BASE_MODEL_URL, tokenizer)
+    if conversation_history:
+        agent.conversation_history = conversation_history
+    response = agent.get_response(utterance, prompt)
+    return response, agent.conversation_history
 
-def get_llama_prod_response(utterance, sys_prompt, experiment=False):
-    prompt = prepare_prompt_llama3(sys_prompt)
-    if isinstance(utterance, str):
-        return get_instruct_response(utterance, prompt, experiment=experiment)
-    else:
-        return get_instruct_conversation_continue(utterance, prompt, experiment=experiment)
-    
 def get_llama_chat(utterance, sys_prompt, conversation_history: list = []):
-    # prompt = prepare_prompt_llama3(sys_prompt) # V5 Prompt is already folded up 
-    prompt = sys_prompt
-    return get_instruct_response_history(utterance, prompt, conversation_history)
+    agent = Agent(BASE_MODEL_NAME, BASE_MODEL_URL, None)
+    if conversation_history:
+        agent.conversation_history = conversation_history
+    response = agent.get_response(utterance, sys_prompt)
+    return response, agent.conversation_history
     
 
 #####################
