@@ -1,5 +1,4 @@
 # from synwrite.prompt_fwd import attack_prompt, customerPromptLlama3_instruct_v6
-from .utils import maria_prompt, alex_prompt
 import json 
 import os
 import random
@@ -9,29 +8,23 @@ from .model import get_claude_response
 from tqdm import tqdm as tqdm 
 
 
-# Customer & Agent Prompt
-eCoach_prompt = maria_prompt
-eAgent_prompt = alex_prompt
-
 # OpenRouter Model Names
 model_names = ["google/gemini-flash-1.5", "openai/gpt-4o", "qwen/qwen-110b-chat", "google/gemini-pro-1.5", "cohere/command-r-plus", "mistralai/mistral-large", "mistralai/mixtral-8x22b-instruct"]
 
 
 class Detector:
-    def __init__(self, p1_prompt, p2_prompt, detection_issues, p1_agent, p2_agent, max_rounds, dir):
+    def __init__(self, initial_query, detection_issues, p1_agent, p2_agent, max_rounds, dir):
         """ 
         Detector Class: 2-player conversation && Issue detector
         - Claude Sonnet adopted for Issue detection with JSON output
         - Mutate on roles are required during the conversation
         """
-        self.p1_prompt = p1_prompt
-        self.p2_prompt = p2_prompt
         self.detection_issues = detection_issues
         self.p1_agent = p1_agent
         self.p2_agent = p2_agent
         self.max_rounds = max_rounds
         self.dir = dir
-        self.conversation_history = []
+        self.conversation_history = [{"role": "p2", "content": initial_query}] # Agent begins with specific query
         self.issue_history = []
         self.issues = 0
         
@@ -40,24 +33,22 @@ class Detector:
              use_customer_base: bool,  
              sales_model_name: str, 
              customer_prompt: str,
-             agent_prompt: str, 
+             sales_prompt: str, 
+             initial_query: str,
              tokenizer_name: str= "meta-llama/Meta-Llama-3-8B-Instruct"):
         if use_customer_base:
             customer_model = VLLM_MODEL(BASE_MODEL_NAME, BASE_MODEL_URL)
         else:
             customer_model = VLLM_MODEL(FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL)
      
+        
         # Initialize Sales Agent
         sales_model = OpenRouter_Model(sales_model_name)
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_name or "meta-llama/Meta-Llama-3-8B-Instruct")
-        sales_agent = Agent(sales_model, tokenizer)
+        sales_agent = Agent(sales_model, tokenizer, sales_prompt)
         
         # Initialize Customer Agent
-        customer_agent = Agent(customer_model, tokenizer)
-        
-        # Set up prompts
-        p1_prompt = customer_prompt
-        p2_prompt = agent_prompt
+        customer_agent = Agent(customer_model, tokenizer, customer_prompt)
         
         # Load detection issues
         with open("data/detect/issues.json", 'r') as file:
@@ -67,25 +58,25 @@ class Detector:
         max_rounds = 10
         dir = "data/issues/"
         
-        return cls(p1_prompt, p2_prompt, detection_issues, customer_agent, sales_agent, max_rounds, dir)
+        return cls(initial_query, detection_issues, customer_agent, sales_agent, max_rounds, dir)
 
         
     def p1_act(self):
         # Get p1 response
-        p1_response = self.p1_agent.get_response(self.p1_prompt, self.conversation_history[-1]["content"] if self.conversation_history else "")
+        p1_response = self.p1_agent.get_response(self.conversation_history[-1]["content"] if self.conversation_history else "")
         self.conversation_history.append({"role": "p1", "content": p1_response})
         return p1_response
         
     def p2_act(self):
         # Get p2 response
-        p2_response = self.p2_agent.get_response(self.p2_prompt, self.conversation_history[-1]["content"])
+        p2_response = self.p2_agent.get_response(self.conversation_history[-1]["content"])
         self.conversation_history.append({"role": "p2", "content": p2_response})
         return p2_response
     
     @property
     def mapped_conversation(self):
         mapped_conversation = [
-            {"role": "customer" if msg["role"] == "p1" else "sales_agent", "content": msg["content"]}
+            {"role": "Maria" if msg["role"] == "p1" else "Alex", "content": msg["content"]} # Temporary Hack
             for msg in self.conversation_history
         ]
         return mapped_conversation
@@ -98,7 +89,7 @@ class Detector:
         
         {json.dumps(last_two_messages, indent=2)}
         
-        Detect any of the following issues: {', '.join([issue['name'] for issue in self.detection_issues])}
+        Detect any of the following issues: {', '.join([f"Name: {issue['name']}, Description: {issue['description']}" for issue in self.detection_issues])}
         
         Respond with a JSON object in the following format:
         {{
@@ -153,7 +144,14 @@ class Detector:
     
     
 if __name__ == "__main__":
+    
     import argparse
+    import random
+    import json
+    from .prompt import maria_prompt, alex_prompt
+    
+    eCoach_prompt = maria_prompt
+    eAgent_prompt = alex_prompt 
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', type=int, choices=[0, 1], default=0, help='0: do not use base model, 1: use base model')
@@ -162,11 +160,17 @@ if __name__ == "__main__":
     use_base_model = bool(args.m)
     sales_model_name = random.choice(model_names)
     
-    detector = Detector.make(use_base_model,
-                            sales_model_name,
-                            eCoach_prompt, 
-                            eAgent_prompt)
+    with open("data/detect/queries.json", 'r') as file:
+        queries = json.load(file)["queries"]
+    
+    query = random.choice(queries)
+    
+    detector = Detector.make(
+        use_base_model,
+        sales_model_name,
+        eCoach_prompt, 
+        eAgent_prompt,
+        query
+    )
 
     issue_history, conversation_history = detector.run()
-    
-    detector.store_detected_issue()

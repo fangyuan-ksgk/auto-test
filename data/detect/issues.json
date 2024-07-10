@@ -1,6 +1,6 @@
 [
     {
         "name": "out_of_character",
-        "description": "Out-of-character response is when customer's response does not sound like a Customer, but more similar to a Sales Agent, or an AI Assistant, or something else."
+        "description": "Out-of-character response is when Maria's response does not sound like a Customer, but more similar to a Sales Agent, or an AI Assistant, or something else. We do NOT detect Alex's out-of-character response here. Do not detect issue on Alex's side!"
     }
 ]
