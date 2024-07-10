@@ -11,6 +11,11 @@ python -m src.eval -m 1
 ```
 This mode asks for Human acceptance of the evaluation result. All human-supervised evaluation result will be stored and used for future evaluation & alignment. 
 
+```python
+python -m src.eval -m 0
+```
+This mode automatically performs evaluation based on historical human annotation and LLM's reasoning ability.
+
 * Continuous Alignment: Stored human preference could be used to align the evaluator for better accuracy
 
 Ensures both technical reliability and user satisfaction for deployed AI models.
