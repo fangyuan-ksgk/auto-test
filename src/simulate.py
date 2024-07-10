@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from .model import get_claude_response
 from tqdm import tqdm as tqdm 
 import time
+from typing import Optional
 
 # Simulate Conversation
 # OpenRouter Model Names
@@ -33,6 +34,7 @@ class Simulator:
              customer_prompt: str,
              sales_prompt: str, 
              initial_query: str,
+             max_round: Optional[int] = 10,
              tokenizer_name: str= "meta-llama/Meta-Llama-3-8B-Instruct"):
         if use_customer_base:
             customer_model = VLLM_MODEL(BASE_MODEL_NAME, BASE_MODEL_URL)
@@ -48,7 +50,7 @@ class Simulator:
         customer_agent = Agent(customer_model, tokenizer, customer_prompt)
         
         # Set up other parameters
-        max_rounds = 10
+        max_rounds = max_round if max_round is not None else 10
         output_dir = "data/simulate/"
         
         return cls(initial_query, customer_agent, sales_agent, max_rounds, output_dir)
@@ -91,6 +93,13 @@ class Simulator:
         
         return self.mapped_conversation
     
+    def save_conversation(self, output_file):
+        """Save the conversation to a JSON file."""
+        output_path = os.path.join(self.output_dir, output_file)
+        with open(output_path, 'w') as f:
+            json.dump(self.mapped_conversation, f, indent=2)
+        print(f"Simulated conversation stored in: {output_path}")
+    
     
 if __name__ == "__main__":
     
@@ -113,32 +122,28 @@ if __name__ == "__main__":
     customer_prompt = maria_prompt
     sales_prompt = alex_prompt
 
-    # Choose a random sales model
-    sales_model_name = random.choice(model_names)
-    
-    # Choose an initial query
+    # Loading a variety of queries
     with open("data/detect/queries.json", 'r') as file:
-        queries = json.load(file)["queries"]
-    initial_query = random.choice(queries)
-
-    # Create the simulator
-    simulator = Simulator.make(
-        use_customer_base=use_base_model,
-        sales_model_name=sales_model_name,
-        customer_prompt=customer_prompt,
-        sales_prompt=sales_prompt,
-        initial_query=initial_query,
-    )
-
-    # Run the simulation
-    conversation = simulator.run()
-
-    # Construct the output file name
-    output_file = f"{args.o}_{model_type}_model_{args.v}.json"
+        queries = json.load(file)["queries"]    
     
-    # Save the conversation with the constructed file name
-    output_path = os.path.join(simulator.output_dir, output_file)
-    with open(output_path, 'w') as f:
-        json.dump(conversation, f, indent=2)
+    for initial_query in queries:
+        # Diverse model provides diverse chatting experience
+        sales_model_name = random.choice(model_names)
 
-    print(f"Simulated conversation stored in: {output_path}")
+        # Create the simulator
+        simulator = Simulator.make(
+            use_customer_base=use_base_model,
+            sales_model_name=sales_model_name,
+            customer_prompt=customer_prompt,
+            sales_prompt=sales_prompt,
+            initial_query=initial_query,
+        )
+
+        # Run the simulation
+        conversation = simulator.run()
+
+        # Construct the output file name
+        output_file = f"{args.o}_{model_type}_model_{args.v}_{sales_model_name}_{initial_query[:20]}.json"
+        
+        # Store Conversation
+        simulator.save_conversation(output_file)
