@@ -17,6 +17,7 @@ class Simulator:
     def __init__(self, initial_query, p1_agent, p2_agent, max_rounds, output_dir):
         """ 
         Simulator: 2-player conversation
+        - Automate testing on served models, with different prompts
         """
         self.p1_agent = p1_agent
         self.p2_agent = p2_agent
@@ -89,3 +90,55 @@ class Simulator:
         print(f"Simulated conversation stored in: {filepath}")
         
         return self.mapped_conversation
+    
+    
+if __name__ == "__main__":
+    
+    import argparse
+    import random
+    from .prompt import maria_prompt, alex_prompt
+
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description="Run conversation simulation")
+    parser.add_argument('-m', type=int, choices=[0, 1], default=0, help='0: use fine-tuned model, 1: use base model')
+    parser.add_argument('-v', type=str, default='Jul-10', help='Prompt version')
+    parser.add_argument('-o', type=str, default='simulated_conversation', help='Output file name prefix')
+    args = parser.parse_args()
+
+    # Determine which model to use
+    use_base_model = bool(args.m)
+    model_type = "base" if use_base_model else "fine-tuned"
+
+    # Set up prompts
+    customer_prompt = maria_prompt
+    sales_prompt = alex_prompt
+
+    # Choose a random sales model
+    sales_model_name = random.choice(model_names)
+    
+    # Choose an initial query
+    with open("data/detect/queries.json", 'r') as file:
+        queries = json.load(file)["queries"]
+    initial_query = random.choice(queries)
+
+    # Create the simulator
+    simulator = Simulator.make(
+        use_customer_base=use_base_model,
+        sales_model_name=sales_model_name,
+        customer_prompt=customer_prompt,
+        sales_prompt=sales_prompt,
+        initial_query=initial_query,
+    )
+
+    # Run the simulation
+    conversation = simulator.run()
+
+    # Construct the output file name
+    output_file = f"{args.o}_{model_type}_model_{args.v}.json"
+    
+    # Save the conversation with the constructed file name
+    output_path = os.path.join(simulator.output_dir, output_file)
+    with open(output_path, 'w') as f:
+        json.dump(conversation, f, indent=2)
+
+    print(f"Simulated conversation stored in: {output_path}")
