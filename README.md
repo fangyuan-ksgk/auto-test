@@ -5,10 +5,17 @@ Comprehensive evaluation suite for production-ready AI models.
 ```python
 python -m src.detect
 ```
-* Subjective Quality Assessment: Evaluates user experience and style alignment using AI-assisted tools and human feedback.
+
+* Subjective Assessment w. Human Supervision: Evaluates user experience and style alignment using AI-assisted tools and human feedback. This mode asks for Human acceptance of the evaluation result. All human-supervised evaluation result will be stored and used for future evaluation & alignment. 
 ```python
-python -m src.
+python -m src.eval -m 1
 ```
+
+* Automatic Subjective Assessment. This mode performs evaluation based on historical human annotation and LLM's reasoning ability. 
+```python
+python -m src.eval -m 0
+```
+
 * Continuous Alignment: Stored human preference could be used to align the evaluator for better accuracy
 
 Ensures both technical reliability and user satisfaction for deployed AI models.
