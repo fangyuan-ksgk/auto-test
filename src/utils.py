@@ -2,13 +2,13 @@ import json
 from openai import OpenAI
 import os
 import json
-# import pandas as pd
 import glob
 import random
 from tqdm import tqdm
 from groq import Groq
 from .model import get_oai_response
 from os import getenv 
+from typing import Optional, Union
 
 
 # Convert Conversation History: Agent Side 
@@ -29,104 +29,6 @@ def revert_role_for_customer(c):
     c["text"] = c["text"].strip("\n")
     return c    
 
-# gets API Key from environment variable OPENAI_API_KEY
-def get_agent_response(utterance, sys_prompt, model="google/gemini-flash-1.5"):
-    try:
-        client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=getenv("OPENROUTER_API_KEY"),
-        )
-        completion = client.chat.completions.create(
-        model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": sys_prompt,
-
-            },
-            {
-            "role": "user",
-            "content": utterance,
-            },
-        ],
-        )
-        return completion.choices[0].message.content
-    except:
-        response = get_oai_response(prompt = utterance, system_prompt = sys_prompt)
-        return response
-    
-def get_agent_reply(utterance, attack_prompt, conversation_history, model_name):
-
-    [mutate_role_for_agent(c) for c in conversation_history] # In-Place Role Switch
-    
-    messages = [{"role": "system", "content": attack_prompt}] + [{"role": c["role"], "content": c["text"]} for c in conversation_history]
-    
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=getenv("OPENROUTER_API_KEY"),
-    )
-
-    completion = client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-    )
-
-    agent_response = completion.choices[0].message.content
-    # Add Agent Response and revert to customer side
-    # conversation_history.append({"role": "assistant", "text": agent_response})
-    [revert_role_for_customer(c) for c in conversation_history]
-
-    return agent_response, conversation_history
-
-        
-# Quality Checker Factory
-def quality_checker(realistic: bool, reason: str) -> str:
-    f"""
-    Use this function to check whether the customer response is realistic. Unrealistic response is super weird and usually repeat sale's response or act like a sale person.
-    Note that being rude is completely fine, customer tends to have a variety of personalities. 
-    Args: 
-        realistic (bool): Whether the response is realistic or not.
-        reason (str): The reason for the response being realistic or not.
-
-    Returns:
-        dict: A dictionary containing the quality of the response and the reason for the quality.
-    """
-    try:
-        return json.dumps({"realistic": realistic, "reason": reason})
-    except:
-        return json.dumps({"realistic": False, "reason": "No quality checker found"})
-    
-
-def get_response(assistant):
-    content = assistant.memory.chat_history[-1].content
-    response = []
-    lines = content.split("\n")
-    patterns = ["1.", "2.", "3.", "4.", "5."]
-    for line in lines:
-        for pattern in patterns:
-            if pattern in line:
-                r = line.split(pattern)[1].strip()
-                response.append(r)
-    return response
-
-
-def parse_messages(text):
-    lines = text.split("\n")
-    # Few pattern templates for parsing the generated responses
-    pattern_templates = ["{i}. **[RESPONSE{i}]**", "{i}. [RESPONSE{i}]", "{i}. [RESPONSE]", "{i}."]
-    messages = []
-    for l in lines:
-        for i in range(1,6):
-            for pattern_template in pattern_templates:
-                pattern = pattern_template.format(i=i)
-                if pattern in l:
-                    messages.append(l.split(pattern)[-1].strip())
-                    break
-    return messages
-
-import json
-from openai import OpenAI
-
 # Comment: This template is super weird -- why do we put example input & output as if they are part of the conversation (?)
 LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
@@ -138,9 +40,8 @@ LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_head
 
 BASE_MODEL_URL = "http://ec2-13-229-24-160.ap-southeast-1.compute.amazonaws.com:8000/v1"
 BASE_MODEL_NAME = "MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ"
-FINETUNE_MODEL_URL = "http://43.218.240.61:8000/v1"
-FINETUNE_MODEL_NAME = "Ksgk-fy/ecoach_philippine_v2_merge"
-
+FINETUNE_MODEL_URL = "http://43.218.77.178:8000/v1"
+FINETUNE_MODEL_NAME = "Ksgk-fy/ecoach_philippine_v10_intro_merge"
 
 class VLLM_MODEL: 
     """
@@ -182,13 +83,65 @@ class VLLM_MODEL:
             },
         )
         return stream
+    
+    
+class OpenRouter_Model:
+    """
+    OpenRouter served model class
+    """
+    def __init__(self, model_name="google/gemini-flash-1.5"):
+        self.model_name = model_name
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=getenv("OPENROUTER_API_KEY"),
+        )
+
+    def get_completion(self, prompt, max_tokens=512, temperature=0.0, stop=["<|eot_id|>"]):
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stop=stop,
+            )
+            return response.choices[0].message.content
+        except:
+            return get_oai_response(prompt=prompt)
+
+    def get_streaming_completion(self, prompt, max_tokens=512, temperature=0.0, stop=["<|eot_id|>"]):
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stop=stop,
+                stream=True,
+            )
+            return stream
+        except:
+            return get_oai_response(prompt=prompt, stream=True)
+        
+def get_agent_response(utterance, sys_prompt, model="google/gemini-flash-1.5"):
+    openrouter_model = OpenRouter_Model(model)
+    prompt = f"{sys_prompt}\n\nUser: {utterance}\nAssistant:"
+    return openrouter_model.get_completion(prompt)
+    
 
 class Agent:
     """ 
     vLLM served Agent LLM object
     """
-    def __init__(self, model_name, base_url, tokenizer):
-        self.model = VLLM_MODEL(model_name, base_url)
+    def __init__(self, 
+                 model: Optional[Union[OpenRouter_Model, VLLM_MODEL]],
+                 tokenizer):
+        
+        self.model = model 
         self.tokenizer = tokenizer
         self.conversation_history = []
         
@@ -212,6 +165,8 @@ class Agent:
         prompt = self.format_prompt(system_prompt)
         response = self.model.get_completion(prompt)
         self.conversation_history.append({"role": "assistant", "content": response})
+        # Truncate conversation history
+        self.conversation_history = self.conversation_history[-16:]
         return response
     
     def reset_conversation(self):
@@ -220,24 +175,27 @@ class Agent:
         """
         self.conversation_history = []
         
+
+# These function looks wierd --> I do not see any system prompt getting injected around here
 def get_instruct_conversation_continue(utter_dict, prompt, experiment=False, tokenizer=None):
     base_url = FINETUNE_MODEL_URL if experiment else BASE_MODEL_URL
     agent = Agent(BASE_MODEL_NAME, base_url, tokenizer)
-    
     for key, item in utter_dict.items():
         role = "user" if key == "Customer" else "assistant"
         agent.conversation_history.append({"role": role, "content": item})
-    
     return agent.get_response("", prompt)
+
 
 def get_finetune_response(utterance, prompt, tokenizer=None):
     agent = Agent(FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL, tokenizer)
     return agent.get_response(utterance, prompt)
 
+
 def get_instruct_response(utterance, prompt, experiment=False, tokenizer=None):
     base_url = FINETUNE_MODEL_URL if experiment else BASE_MODEL_URL
     agent = Agent(BASE_MODEL_NAME, base_url, tokenizer)
     return agent.get_response(utterance, prompt)
+
 
 def get_instruct_response_history(utterance, prompt, conversation_history=None, tokenizer=None):
     agent = Agent(BASE_MODEL_NAME, BASE_MODEL_URL, tokenizer)
@@ -245,6 +203,7 @@ def get_instruct_response_history(utterance, prompt, conversation_history=None, 
         agent.conversation_history = conversation_history
     response = agent.get_response(utterance, prompt)
     return response, agent.conversation_history
+
 
 def get_llama_chat(utterance, sys_prompt, conversation_history: list = []):
     agent = Agent(BASE_MODEL_NAME, BASE_MODEL_URL, None)
@@ -261,8 +220,6 @@ def get_llama_chat(utterance, sys_prompt, conversation_history: list = []):
 # (IV) objection: customer begin | agent reply | customer push back
 # Out Of Character Checks (OOCC)
 
-
-
 def parse_conversation(conv_dict):
     conversation_str = ""
     for entry in conv_dict:
@@ -271,6 +228,7 @@ def parse_conversation(conv_dict):
         elif entry['role'] == 'You':
             conversation_str += "Maria: " + entry['text'] + "\n"
     return conversation_str
+
 
 def groq_OOC_check(conv_dict):
     """
@@ -374,6 +332,7 @@ def construct_detection_tools(detection_issues):
         }
         tools.append(tool)
     return tools
+
 
 def groq_behavior_check(conv_dict, detection_issues):
     """

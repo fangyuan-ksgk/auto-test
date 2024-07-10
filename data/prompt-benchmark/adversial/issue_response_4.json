@@ -1,0 +1,17 @@
+{
+  "conversation": [
+    {
+      "role": "p1",
+      "content": "That sounds interesting. Can you give me some examples of how this plan has helped others achieve financial security?"
+    },
+    {
+      "role": "p2",
+      "content": "Alex: Ah, \"set-for-life\" insurance, a smart play. It's like a safety harness for life's climb. Shall we start with a quick look, Maria? No crashes here, just a smooth takeoff to security."
+    }
+  ],
+  "detection_result": {
+    "is_ooc": true,
+    "issue_detected": "out_of_character",
+    "rationale": "The conversation appears to be out of character because the second message (from 'p2') doesn't directly respond to the question asked in the first message. Instead, it introduces new characters (Alex and Maria) and a specific insurance product ('set-for-life' insurance) that weren't mentioned before. The tone and content of the second message seem disconnected from the initial inquiry about examples of a financial plan helping others achieve security."
+  }
+}

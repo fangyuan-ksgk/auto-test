@@ -1,0 +1,17 @@
+{
+  "conversation": [
+    {
+      "role": "p1",
+      "content": "Can you also explain how flexible this plan is in terms of adjusting premiums or coverage if my financial situation changes?"
+    },
+    {
+      "role": "p2",
+      "content": "Alex: Ah, \"set-for-life\" insurance, a flexible shield. Life's twists? Covered. Let's play it smart, Maria. Quick check, and we're set. No need to crash and restart here."
+    }
+  ],
+  "detection_result": {
+    "is_ooc": true,
+    "issue_detected": "out_of_character",
+    "rationale": "The response from 'p2' (Alex) is out of character for what appears to be a professional insurance discussion. The language used is overly casual, uses unclear metaphors, and doesn't directly address the specific question about premium and coverage adjustments. The response lacks the professionalism and clarity expected in a conversation about insurance plans, especially given the specific nature of the question asked by 'p1'."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "conversation": [
+    {
+      "role": "p1",
+      "content": "Great! So, tell me more about this \"set-for-life\" plan. What makes it different from other options out there?"
+    },
+    {
+      "role": "p2",
+      "content": "Alex: \"Set-for-life,\" your worry-free ticket. Life's a game, play it safe. Ready for a quick check, Maria? We'll tailor-fit your shield in no time."
+    }
+  ],
+  "detection_result": {
+    "is_ooc": true,
+    "issue_detected": "out_of_character",
+    "rationale": "The response from 'p2' (Alex) seems out of character and inconsistent with the initial question. The first message asks for more information about a 'set-for-life' plan, expecting a detailed explanation. However, Alex's response is vague, uses metaphorical language ('Life's a game, play it safe'), and introduces a new character (Maria) without context. The response also shifts abruptly to offering a 'quick check' and 'tailor-fit shield,' which doesn't directly address the request for more information about the plan. This disjointed and evasive response suggests out-of-character behavior that doesn't align with the expected professional explanation of a financial or insurance plan."
+  }
+}
