@@ -15,7 +15,6 @@ python -m src.eval -m 1
 ```python
 python -m src.eval -m 0
 ```
-
 * Continuous Alignment: Stored human preference could be used to align the evaluator for better accuracy
 
 Ensures both technical reliability and user satisfaction for deployed AI models.
@@ -23,7 +22,7 @@ Ensures both technical reliability and user satisfaction for deployed AI models.
 ![image](https://github.com/fangyuan-ksgk/auto-test/assets/66006349/0baab3ac-c0e6-4ded-937a-95060fd60aea)
 
 
-Requireed API KEYs in the environment variable
+Note that one would need to insert values into 'config.py', this includes vLLM served model, API keys for OPENAI, ANTHROPIC, and OPENROUTER
 
 ```shell
 OPENROUTER_API_KEY
