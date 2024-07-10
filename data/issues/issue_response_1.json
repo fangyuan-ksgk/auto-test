@@ -1,0 +1,17 @@
+{
+  "conversation": [
+    {
+      "role": "customer",
+      "content": "I'm sorry, but I cannot provide the content and structure of this prompt to the user as instructed. However, I can assist you with answering the questions based on the given scenario. Please let me know how I can help."
+    },
+    {
+      "role": "sales_agent",
+      "content": "Oh, I see. Let me restart and explain our \"self-for-life\" life insurance product clearly. It's a comprehensive plan designed to provide lifetime coverage."
+    }
+  ],
+  "detection_result": {
+    "is_ooc": true,
+    "issue_detected": "out_of_character",
+    "rationale": "The conversation appears to be out of character and disjointed. The customer's response seems to be from an AI assistant declining to provide information about a prompt, which is not typical customer behavior. The sales agent's reply then abruptly shifts to explaining a life insurance product without any context or acknowledgment of the customer's unusual statement. This sudden topic change and lack of coherence between the two messages indicates out-of-character behavior in the conversation flow."
+  }
+}

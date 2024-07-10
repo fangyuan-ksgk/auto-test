@@ -1,5 +1,4 @@
 # from synwrite.prompt_fwd import attack_prompt, customerPromptLlama3_instruct_v6
-from .utils import adversial_attack_ooc, collect_ooc_response
 from .utils import maria_prompt, alex_prompt
 import json 
 import os
@@ -66,7 +65,7 @@ class Detector:
         
         # Set up other parameters
         max_rounds = 10
-        dir = "data/prompt-benchmark/adversial/"
+        dir = "data/issues/"
         
         return cls(p1_prompt, p2_prompt, detection_issues, customer_agent, sales_agent, max_rounds, dir)
 
@@ -82,10 +81,18 @@ class Detector:
         p2_response = self.p2_agent.get_response(self.p2_prompt, self.conversation_history[-1]["content"])
         self.conversation_history.append({"role": "p2", "content": p2_response})
         return p2_response
+    
+    @property
+    def mapped_conversation(self):
+        mapped_conversation = [
+            {"role": "customer" if msg["role"] == "p1" else "sales_agent", "content": msg["content"]}
+            for msg in self.conversation_history
+        ]
+        return mapped_conversation
         
     def detect_issue(self):
         # use sonnet to detect issues
-        last_two_messages = self.conversation_history[-2:]
+        last_two_messages = self.mapped_conversation[-2:]
         claude_prompt = f"""
         Analyze the following conversation for out-of-character behavior or other issues:
         
@@ -117,9 +124,11 @@ class Detector:
         file_name = f"issue_response_{len(self.issue_history)}.json"
         file_path = os.path.join(self.dir, file_name)
         os.makedirs(self.dir, exist_ok=True)
+        
+        # Map roles for conversation history
         with open(file_path, "w") as f:
             json.dump({
-                "conversation": self.conversation_history[-2:],
+                "conversation": self.mapped_conversation,
                 "detection_result": detection_result
             }, f, indent=2)
         
@@ -133,20 +142,27 @@ class Detector:
                 print("### OOC Detected ###")
                 print(f"Issue: {detection_result['issue_detected']}")
                 print(f"Rationale: {detection_result['rationale']}")
-                print(f"Issue Query: {self.conversation_history[-2]['content']}")
-                print(f"Issue Response: {self.conversation_history[-1]['content']}")
+                print(f"Issue Query: {self.mapped_conversation[-2]['content']}")
+                print(f"Issue Response: {self.mapped_conversation[-1]['content']}")
                 print("####################")
                 
         self.store_detected_issue(detection_result)
         
-        return self.issue_history, self.conversation_history
+        return self.issue_history, self.mapped_conversation
     
     
     
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', type=int, choices=[0, 1], default=0, help='0: do not use base model, 1: use base model')
+    args = parser.parse_args()
+
+    use_base_model = bool(args.m)
     sales_model_name = random.choice(model_names)
     
-    detector = Detector.make(False,
+    detector = Detector.make(use_base_model,
                             sales_model_name,
                             eCoach_prompt, 
                             eAgent_prompt)

@@ -5,29 +5,37 @@ import json
 import glob
 import random
 from tqdm import tqdm
-from groq import Groq
 from .model import get_oai_response
 from os import getenv 
 from typing import Optional, Union
 
 
-# Convert Conversation History: Agent Side 
-def mutate_role_for_agent(c):
-    if c["role"] == "Agent":
-        c["role"] = "assistant"
-    elif c["role"] == "You":
-        c["role"] = "user"
-    c["text"] = c["text"].strip("\n")
-    return c
+def load_requirements(directory="data/attribute"):
+    attribute_files = glob.glob(f"{directory}/*.json")
+    loaded_requirements = []
 
-# Convert Conversation History: Customer Side
-def revert_role_for_customer(c):
-    if c["role"] == "assistant":
-        c["role"] = "Agent"
-    elif c["role"] == "user":
-        c["role"] = "You"
-    c["text"] = c["text"].strip("\n")
-    return c    
+    for file_path in attribute_files:
+        with open(file_path, 'r') as file:
+            attribute_data = json.load(file)
+            loaded_requirements.append({
+                "name": attribute_data["name"],
+                "desc": attribute_data["desc"]
+            })
+
+    return loaded_requirements
+
+
+def load_conversations(folder_dir="data/conversation"):
+    """ 
+    Load conversation under certain directory
+    """
+    conversation_files = glob.glob(f"{folder_dir}/*.json")
+    for file_path in conversation_files:
+        with open(file_path, 'r') as file:
+            conversation_data = json.load(file)
+            conversations = conversation_data["conversations"]
+    return conversations
+
 
 # Comment: This template is super weird -- why do we put example input & output as if they are part of the conversation (?)
 LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
@@ -126,11 +134,6 @@ class OpenRouter_Model:
             return stream
         except:
             return get_oai_response(prompt=prompt, stream=True)
-        
-def get_agent_response(utterance, sys_prompt, model="google/gemini-flash-1.5"):
-    openrouter_model = OpenRouter_Model(model)
-    prompt = f"{sys_prompt}\n\nUser: {utterance}\nAssistant:"
-    return openrouter_model.get_completion(prompt)
     
 
 class Agent:
@@ -166,7 +169,7 @@ class Agent:
         response = self.model.get_completion(prompt)
         self.conversation_history.append({"role": "assistant", "content": response})
         # Truncate conversation history
-        self.conversation_history = self.conversation_history[-16:]
+        self.conversation_history = self.conversation_history[-8:]
         return response
     
     def reset_conversation(self):
@@ -174,347 +177,6 @@ class Agent:
         Reset the conversation history
         """
         self.conversation_history = []
-        
-
-# These function looks wierd --> I do not see any system prompt getting injected around here
-def get_instruct_conversation_continue(utter_dict, prompt, experiment=False, tokenizer=None):
-    base_url = FINETUNE_MODEL_URL if experiment else BASE_MODEL_URL
-    agent = Agent(BASE_MODEL_NAME, base_url, tokenizer)
-    for key, item in utter_dict.items():
-        role = "user" if key == "Customer" else "assistant"
-        agent.conversation_history.append({"role": role, "content": item})
-    return agent.get_response("", prompt)
-
-
-def get_finetune_response(utterance, prompt, tokenizer=None):
-    agent = Agent(FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL, tokenizer)
-    return agent.get_response(utterance, prompt)
-
-
-def get_instruct_response(utterance, prompt, experiment=False, tokenizer=None):
-    base_url = FINETUNE_MODEL_URL if experiment else BASE_MODEL_URL
-    agent = Agent(BASE_MODEL_NAME, base_url, tokenizer)
-    return agent.get_response(utterance, prompt)
-
-
-def get_instruct_response_history(utterance, prompt, conversation_history=None, tokenizer=None):
-    agent = Agent(BASE_MODEL_NAME, BASE_MODEL_URL, tokenizer)
-    if conversation_history:
-        agent.conversation_history = conversation_history
-    response = agent.get_response(utterance, prompt)
-    return response, agent.conversation_history
-
-
-def get_llama_chat(utterance, sys_prompt, conversation_history: list = []):
-    agent = Agent(BASE_MODEL_NAME, BASE_MODEL_URL, None)
-    if conversation_history:
-        agent.conversation_history = conversation_history
-    response = agent.get_response(utterance, sys_prompt)
-    return response, agent.conversation_history
-    
-
-#####################
-# Scenario Specific #
-#####################
-
-# (IV) objection: customer begin | agent reply | customer push back
-# Out Of Character Checks (OOCC)
-
-def parse_conversation(conv_dict):
-    conversation_str = ""
-    for entry in conv_dict:
-        if entry['role'] == 'Agent':
-            conversation_str += "Stan: " + entry['text'] + "\n"
-        elif entry['role'] == 'You':
-            conversation_str += "Maria: " + entry['text'] + "\n"
-    return conversation_str
-
-
-def groq_OOC_check(conv_dict):
-    """
-    Use Groq Agent to check if the response from Maria is out of character from the provided conversation, we need Maria to be a customer
-    """
-    
-    parsed_conversation = parse_conversation(conv_dict)
-
-    client = Groq(api_key = os.getenv('GROQ_API_KEY'))
-    MODEL = 'llama3-70b-8192'
-
-    conv_history = """Here are the conversation between Maria, the customer and Stan, the insurance Agent: {conversation_history}"""
-    conv_history = conv_history.format(conversation_history=parsed_conversation)
-
-    messages=[
-        {
-            "role": "system",
-            "content": "You are a function calling LLM which checks if the response from Maria is out of character from the provided conversation, we need Maria to be a customer. Provide your rationale for making the out-of-character judgement.",
-        },
-        {
-            "role": "user",
-            "content": conv_history,
-        }
-    ]
-    tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "is_out_of_character",
-                    "description": "Check if the response is out of character for the given agent",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "out_of_character": {
-                                "type": "boolean",
-                                "description": "Whether the response is out of character",
-                            },
-                            "out_of_character_rationale": {
-                                "type": "string",
-                                "description": "The reason the response is out of character",
-                            }
-                        },
-                        "required": ["out_of_character", "out_of_character_rationale"],
-                    },
-                },
-            }
-    ]
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",
-        max_tokens=4096
-    )
-
-    response_message = response.choices[0].message
-    tool_calls = response_message.tool_calls
-    # Step 2: check if the model wanted to call a function
-    available_functions = {
-        "is_out_of_character": True,
-    }  # only one function in this example, but you can have multiple
-    out_of_character = False
-    if tool_calls:
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_args = json.loads(tool_call.function.arguments)
-            out_of_character = function_args['out_of_character']
-            rationale = function_args["out_of_character_rationale"]
-
-    return out_of_character, rationale
-
-
-
-
-def construct_detection_tools(detection_issues):
-    """ 
-    Construct tools for Groq function call from detection issues
-    """
-    tools = []
-    for issue in detection_issues:
-        tool = {
-            "type": "function",
-            "function": {
-                "name": issue["name"],
-                "description": f"Check if the response exhibits {issue['name']}",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        issue["name"]: {
-                            "type": "boolean",
-                            "description": f"Whether the response exhibits {issue['name']}"
-                        },
-                        f"{issue['name']}_rationale": {
-                            "type": "string",
-                            "description": f"The reason the response exhibits {issue['name']}"
-                        }
-                    },
-                    "required": [issue["name"], f"{issue['name']}_rationale"]
-                },
-            },
-        }
-        tools.append(tool)
-    return tools
-
-
-def groq_behavior_check(conv_dict, detection_issues):
-    """
-    Use Groq Agent to check if the response from Maria is behaving in the wrong way
-    -- Given the list of issue dictionary, perform behavior check accordingly
-    """
-    
-    parsed_conversation = parse_conversation(conv_dict)
-
-    client = Groq(api_key=os.getenv('GROQ_API_KEY'))
-    MODEL = 'llama3-70b-8192'
-
-    conv_history = """Here are the conversation between Maria, the customer and Alex, the insurance Agent: {conversation_history}"""
-    conv_history = conv_history.format(conversation_history=parsed_conversation)
-
-    messages=[
-        {
-            "role": "system",
-            "content": "You are a function calling LLM which checks if the response from Maria exhibits any of the specified issues.",
-        },
-        {
-            "role": "user",
-            "content": conv_history,
-        }
-    ]
-    tools = construct_detection_tools(detection_issues)
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",
-        max_tokens=4096
-    )
-
-    response_message = response.choices[0].message
-    tool_calls = response_message.tool_calls
-    
-    out_of_character = False
-    rationale = ""
-    if tool_calls:
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_args = json.loads(tool_call.function.arguments)
-            if 'out_of_character' in function_args:
-                out_of_character = function_args['out_of_character']
-                rationale = function_args['out_of_character_rationale']
-                break
-
-    return out_of_character, rationale
-
-# Adversial Attack
-
-
-def adversial_attack(eCoach_prompt, dir, attack_prompt, model_name, id=1, agent_response = "Hello Maria", max_rounds: int = 100):
-    issues = 0
-    issue_history = []
-    conversation_history = []
-    for i in tqdm.tqdm(range(max_rounds)):
-        try:
-            response, conversation_history = get_llama_chat(utterance = agent_response, sys_prompt = eCoach_prompt)
-        except Exception as e:
-            print("Rounds of conversation accumulated so far: ", len(conversation_history)//2)
-            print("Error in getting Ecustomer response : ", e)
-            # Slice out only last 10 rounds of conversations
-            conversation_history = conversation_history[-10:]
-            response, conversation_history = get_llama_chat(utterance = agent_response, sys_prompt = eCoach_prompt)
-
-        model_name = model_name.replace("/", "-")
-        file_name = f"llama_v6_response_{model_name}_{id}_{i}.json"
-        file_path = os.path.join(dir, file_name)
-        os.makedirs(dir, exist_ok=True)
-        with open(file_path, "w") as f:
-            json.dump(conversation_history, f)
-
-        try:
-            agent_response = get_agent_response(utterance=response, sys_prompt=attack_prompt, model=model_name)
-        except:
-            import time
-            time.sleep(5)
-            agent_response = get_agent_response(utterance=response, sys_prompt=attack_prompt, model=model_name)
-    
-    if issues == 0:
-        out_str = f"\nRun id {id} | Model: {model_name} | No Issues Detected"
-        print(out_str)
-    else:
-        out_str = f"\nRun id {id} | Model: {model_name} | Issues Detected: {issues}"
-        print(out_str)
-
-    return issue_history, conversation_history
-
-
-def adversial_attack_ooc(eCoach_prompt, attack_prompt, detection_issues, agent_response, model_names, id, max_rounds, dir):
-    """ 
-    V2 Refinement of the Adversial Attack Functional 
-    - Focus on OutOfCharacter Issues (Which we could also potentially fix with fine-tuning)
-    - FWD Production GPTQ llama3 adopted for customer roleplay
-    - OpenRouter with a hoard of LLMs to roleplay as Insurance agent 
-    - Groq 70B llama3 for OOC detection (Function calling agent)
-    """
-
-    issues = 0
-    issue_history = []
-    conversation_history = []
-    model_name = random.choice(model_names)
-    for i in tqdm(range(max_rounds)):
-        try:
-            # How come the previous conversation history is never included into the input ?
-            response, conversation_history = get_llama_chat(utterance = agent_response, sys_prompt = eCoach_prompt, conversation_history=conversation_history)
-        except Exception as e:
-            print("Rounds of conversation accumulated so far: ", len(conversation_history)//2)
-            print("Error in getting Ecustomer response : ", e)
-            # Slice out only last 10 rounds of conversations
-            conversation_history = conversation_history[-10:]
-            response, conversation_history = get_llama_chat(utterance = agent_response, sys_prompt = eCoach_prompt, conversation_history=conversation_history)
-
-        # Issue Detection for the Current Round
-        # is_ooc, rationale = groq_OOC_check(conversation_history[-2:])
-        is_ooc, rationale = groq_behavior_check(conversation_history[-2:], detection_issues)
-        if is_ooc:
-            print("### OOC Detected ###")
-            print("Rationale: ", rationale)
-            issue_query = conversation_history[-2]["text"]
-            issue_response_maria = conversation_history[-1]["text"]
-            print("Issue Query: ", issue_query)
-            print("Issue Response from Maria: ", issue_response_maria)
-            print("####################")
-            issues += 1
-            issue_history.append(rationale)
-
-            # Store Detected Issue Script ||  Last Utterance Has Issue
-            model_name = model_name.replace("/", "-")
-            file_name = f"llama_v6_issue_response_{model_name}_{id}_{i}.json"
-            file_path = os.path.join(dir, file_name)
-            os.makedirs(dir, exist_ok=True)
-            with open(file_path, "w") as f:
-                json.dump(conversation_history, f)
-
-        # Agent respond without knowing any of the conversation history, which is also very wrong ..
-        agent_response_success = False
-        while not agent_response_success:
-            try:
-                agent_response, conversation_history = get_agent_reply(utterance=response, attack_prompt=attack_prompt, conversation_history=conversation_history, model_name=model_name)
-                agent_response_success = True
-            except Exception as e:
-                # print("Error in getting agent response : ", e)
-                model_name = random.choice(model_names)
-
-    return issue_history, conversation_history
-
-
-# Point is to analze on the last utterance (issue query & prompt) from saved json files
-import glob
-import json
-
-# Function to read the last two dictionaries from a JSON file
-def read_last_two_entries(file_path):
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-        if len(data) >= 2:
-            return data[-2:]
-        else:
-            return data
-
-def collect_ooc_response():
-    """ 
-    Collect OOC Issues from Attack environment
-    """
-    files = glob.glob("./data/prompt-benchmark/adversial/*.json")
-    results = []
-    for file in files:
-        last_two = read_last_two_entries(file)
-        results.append({
-            'file': file,
-            'entries': last_two
-        })
-
-    with open("ooc-issue.txt", "w") as f:
-        for result in results:
-            f.write(f"------------------\n")
-            for entry in result['entries']:
-                f.write(f"{entry['role']}: {entry['text'].strip()[:100]}...\n")
-            f.write("\n")  
 
 
 maria_prompt = """
@@ -592,30 +254,4 @@ You asked AGENT to meet you at a nice, quiet cafe (generate a cafe name) in Quez
 alex_prompt = """You are Alex, an insurance agent from FWD insurance. You are chatting with Maria and tries to sell her your "sef-for-life" life insurance product. Keep your response shorter than 2 sentences.
 - Agent will say an incoherent response of one to two words.
 - Agent will use variations of incoherent utterances like:
-- "oh", "ah", "play", "It's been", "you recall", "test done", "know crash", "let me restart". """
-
-
-def load_requirements(directory="data/attribute"):
-    attribute_files = glob.glob(f"{directory}/*.json")
-    loaded_requirements = []
-
-    for file_path in attribute_files:
-        with open(file_path, 'r') as file:
-            attribute_data = json.load(file)
-            loaded_requirements.append({
-                "name": attribute_data["name"],
-                "desc": attribute_data["desc"]
-            })
-
-    return loaded_requirements
-
-def load_conversations(folder_dir="data/conversation"):
-    """ 
-    Load conversation under certain directory
-    """
-    conversation_files = glob.glob(f"{folder_dir}/*.json")
-    for file_path in conversation_files:
-        with open(file_path, 'r') as file:
-            conversation_data = json.load(file)
-            conversations = conversation_data["conversations"]
-    return conversations 
+- "oh", "ah", "play", "It's been", "you recall", "test done", "know crash", "let me restart". """ 
