@@ -1,32 +1,49 @@
 # Auto-Test
-Comprehensive evaluation suite for production-ready AI models.
 
-* Objective Issue Detection: Identifies safety, coherence, and contextual problems through automated testing.
-```python
-python -m src.detect 
+Auto-Test is a comprehensive evaluation suite designed for production-ready AI models. It combines objective issue detection, subjective attribute evaluation, and simulated conversations to ensure both technical reliability and user satisfaction.
+
+## Key Features
+
+### 1. Objective Issue Detection (`src.detect`)
+
+Automatically identifies safety, coherence, and contextual problems through automated testing.
+
+Usage:
 ```
-Note that '-m 0' detects issue for the fine-tuned model, while '-m 1' detects issue for the baseline model. 
+python -m src.detect [-m MODEL_TYPE]
+```
+- `-m 0`: Detects issues for the fine-tuned model
+- `-m 1`: Detects issues for the baseline model
 
-* Subjective Assessment w. Human Supervision: Evaluates user experience and style alignment using AI-assisted tools and human feedback. This mode asks for Human acceptance of the evaluation result. All human-supervised evaluation result will be stored and used for future evaluation & alignment. 
-```python
+### 2. Subjective Attribute Evaluation (`src.evaluate`)
+
+Evaluates user experience and style alignment using AI-assisted tools and human feedback.
+
+#### Human-Supervised Evaluation
+```
 python -m src.eval -m 1
 ```
+This mode requires human acceptance of the evaluation results. All human-supervised evaluation results are stored and used for future evaluation and alignment.
 
-* Automatic Subjective Assessment. This mode performs evaluation based on historical human annotation and LLM's reasoning ability. 
-```python
+#### Automatic Subjective Assessment
+```
 python -m src.eval -m 0
 ```
-* Continuous Alignment: Stored human preference could be used to align the evaluator for better accuracy
+Performs evaluation based on historical human annotations and the language model's reasoning ability.
 
-Ensures both technical reliability and user satisfaction for deployed AI models.
+### 3. Simulated Conversation (`src.simulate`)
 
-![image](https://github.com/fangyuan-ksgk/auto-test/assets/66006349/0baab3ac-c0e6-4ded-937a-95060fd60aea)
+Simulates conversations to test the model's performance in realistic scenarios.
 
+## Continuous Alignment
 
-Note that one would need to insert values into 'config.py', this includes vLLM served model, API keys for OPENAI, ANTHROPIC, and OPENROUTER
+Stored human preferences are used to align the evaluator, improving accuracy over time. This ensures that the evaluation process adapts to evolving user expectations and model capabilities.
 
-```shell
-OPENROUTER_API_KEY
-OPENAI_API_KEY
-ANTHROPIC_API_KEY
-```
+## Benefits
+
+- Comprehensive testing: Covers both objective and subjective aspects of model performance
+- Human-in-the-loop: Incorporates human feedback for more accurate and relevant evaluations
+- Adaptability: Continuously improves evaluation criteria based on stored preferences
+- Flexibility: Supports evaluation of both fine-tuned and baseline models
+
+Auto-Test provides a robust framework for ensuring that deployed AI models meet high standards of technical reliability and user satisfaction.
