@@ -149,28 +149,47 @@ if __name__ == "__main__":
     import random
     import json
     from .prompt import maria_prompt, alex_prompt
-    
-    eCoach_prompt = maria_prompt
-    eAgent_prompt = alex_prompt 
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-m', type=int, choices=[0, 1], default=0, help='0: do not use base model, 1: use base model')
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description="Run conversation detection")
+    parser.add_argument('-m', type=int, choices=[0, 1], default=0, help='0: use fine-tuned model, 1: use base model')
+    parser.add_argument('-v', type=str, default='Jul-10', help='Prompt version')
+    parser.add_argument('-o', type=str, default='detected_conversation', help='Output file name prefix')
     args = parser.parse_args()
 
+    # Determine which model to use
     use_base_model = bool(args.m)
-    sales_model_name = random.choice(model_names)
-    
-    with open("data/detect/queries.json", 'r') as file:
-        queries = json.load(file)["queries"]
-    
-    query = random.choice(queries)
-    
-    detector = Detector.make(
-        use_base_model,
-        sales_model_name,
-        eCoach_prompt, 
-        eAgent_prompt,
-        query
-    )
+    model_type = "base" if use_base_model else "fine-tuned"
 
-    issue_history, conversation_history = detector.run()
+    # Set up prompts
+    customer_prompt = maria_prompt
+    sales_prompt = alex_prompt
+
+    # Loading a variety of queries
+    with open("data/detect/queries.json", 'r') as file:
+        queries = json.load(file)["queries"]    
+    
+    for initial_query in queries:
+        # Diverse model provides diverse chatting experience
+        sales_model_name = random.choice(model_names)
+
+        # Create the detector
+        detector = Detector.make(
+            use_customer_base=use_base_model,
+            sales_model_name=sales_model_name,
+            customer_prompt=customer_prompt,
+            sales_prompt=sales_prompt,
+            initial_query=initial_query,
+        )
+
+        # Run the detection
+        issue_history, conversation_history = detector.run()
+
+        # Construct the output file name
+        output_file = f"{args.o}_{model_type}_model_{args.v}_{sales_model_name.split('/')[-1]}_{initial_query[:20]}.json"
+        
+        # Store Detection Results
+        detector.store_detected_issue({
+            "issue_history": issue_history,
+            "conversation_history": conversation_history
+        })

@@ -66,7 +66,7 @@ def get_oai_response(prompt, system_prompt = "You are a helpful assistant that a
     """ 
     Get response from OAI Model
     """
-    completion = client.chat.completions.create(
+    completion = oai_client.chat.completions.create(
         model="gpt-4-turbo-2024-04-09",
         messages=[
             {'role': 'system', 'content': system_prompt},
