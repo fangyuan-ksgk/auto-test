@@ -683,3 +683,29 @@ alex_prompt = """You are Alex, an insurance agent from FWD insurance. You are ch
 - Agent will say an incoherent response of one to two words.
 - Agent will use variations of incoherent utterances like:
 - "oh", "ah", "play", "It's been", "you recall", "test done", "know crash", "let me restart". """
+
+
+def load_requirements(directory="data/attribute"):
+    attribute_files = glob.glob(f"{directory}/*.json")
+    loaded_requirements = []
+
+    for file_path in attribute_files:
+        with open(file_path, 'r') as file:
+            attribute_data = json.load(file)
+            loaded_requirements.append({
+                "name": attribute_data["name"],
+                "desc": attribute_data["desc"]
+            })
+
+    return loaded_requirements
+
+def load_conversations(folder_dir="data/conversation"):
+    """ 
+    Load conversation under certain directory
+    """
+    conversation_files = glob.glob(f"{folder_dir}/*.json")
+    for file_path in conversation_files:
+        with open(file_path, 'r') as file:
+            conversation_data = json.load(file)
+            conversations = conversation_data["conversations"]
+    return conversations 
