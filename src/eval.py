@@ -234,7 +234,13 @@ class AOEval:
             suggested_bucket = evaluation_results[attribute.name]
             final_bucket = self.human_annotation(conversation, attribute, suggested_bucket)
             attribute.update_bucket(final_bucket, conversation)
-
+            
+    async def evaluate(self, conversation: str):
+        evaluation_results = await self.compare_eval(conversation)
+        for attribute in self.requirement.attributes:
+            suggested_bucket = evaluation_results[attribute.name]
+            attribute.update_bucket(suggested_bucket, conversation)
+                
     def save(self):
         for attribute in self.requirement.attributes:
             attribute.save()
@@ -244,8 +250,14 @@ class AOEval:
             
 if __name__ == "__main__":
     
+    import argparse
     from .attribute import Requirement, Attribute
     from .utils import load_conversations, load_requirements
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Run evaluation with or without human annotation.")
+    parser.add_argument("-m", type=int, choices=[0, 1], default=0, help="0 for evaluate, 1 for evaluate_and_annotate")
+    args = parser.parse_args()
 
     # Load requirements and create Requirement object
     requirements = load_requirements()
@@ -257,24 +269,15 @@ if __name__ == "__main__":
     # Main evaluator
     aoeval = AOEval(requirement)
     
-    import asyncio
-
-    # Run Evaluation with Human Annotation : ver.1
-    async def run_eval(conversation):
-        result = await aoeval.direct_eval(conversation)
-        return result
-    # Predict on Buckets with the evaluator
-    pred_buckets = []
-    for conversation in conversations:
-        pred_bucket = asyncio.run(run_eval(conversation))
-        pred_buckets.append(pred_bucket)
-    # Request Human Annotation on Evaluation Result
-    for (conversation, pred_bucket) in zip(conversations, pred_buckets):
-        for attribute in requirement.attributes:
-            bucket = aoeval.human_annotation(conversation, attribute, pred_bucket[attribute.name])
-            attribute.update_bucket(bucket, conversation)
-    aoeval.save()
+    if args.m == 0:
+        # Run Evaluation without Human Annotation
+        for conversation in conversations:
+            asyncio.run(aoeval.evaluate(conversation))
+    else:
+        # Run Evaluation with Human Annotation
+        for conversation in conversations:
+            asyncio.run(aoeval.evaluate_and_annotate(conversation))
     
-    # Run Evaluation with Human
+    aoeval.save()
             
         
