@@ -2,6 +2,9 @@
 
 Auto-Test is a comprehensive evaluation suite designed for production-ready AI models. It combines objective issue detection, subjective attribute evaluation, and simulated conversations to ensure both technical reliability and user satisfaction.
 
+![image](https://github.com/fangyuan-ksgk/auto-test/assets/66006349/f75eb781-f75d-47ff-9516-14a9f9dc0847)
+
+
 ## Key Features
 
 ### 1. Objective Issue Detection (`src.detect`)
