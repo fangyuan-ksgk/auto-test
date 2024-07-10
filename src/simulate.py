@@ -1,18 +1,18 @@
 import json 
 import os
 import random
-from .utils import BASE_MODEL_NAME, BASE_MODEL_URL, FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL, VLLM_MODEL, OpenRouter_Model, Agent
+from .utils import VLLM_MODEL, OpenRouter_Model, Agent
+from .config import BASE_MODEL_NAME, BASE_MODEL_URL, FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL
 from transformers import AutoTokenizer
 from .model import get_claude_response
 from tqdm import tqdm as tqdm 
 import time
 from typing import Optional
 
-# Simulate Conversation
 # OpenRouter Model Names
 model_names = ["google/gemini-flash-1.5", "openai/gpt-4o", "qwen/qwen-110b-chat", "google/gemini-pro-1.5", "cohere/command-r-plus", "mistralai/mistral-large", "mistralai/mixtral-8x22b-instruct"]
 
-
+# Simulate Conversation
 class Simulator:
     
     def __init__(self, initial_query, p1_agent, p2_agent, max_rounds, output_dir):
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         conversation = simulator.run()
 
         # Construct the output file name
-        output_file = f"{args.o}_{model_type}_model_{args.v}_{sales_model_name}_{initial_query[:20]}.json"
+        output_file = f"{args.o}_{model_type}_model_{args.v}_{sales_model_name.split('/')[-1]}_{initial_query[:20]}.json"
         
         # Store Conversation
         simulator.save_conversation(output_file)

@@ -1,11 +1,11 @@
-# from synwrite.prompt_fwd import attack_prompt, customerPromptLlama3_instruct_v6
-import json 
 import os
+import json
 import random
-from .utils import BASE_MODEL_NAME, BASE_MODEL_URL, FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL, VLLM_MODEL, OpenRouter_Model, Agent
+from tqdm import tqdm
 from transformers import AutoTokenizer
 from .model import get_claude_response
-from tqdm import tqdm as tqdm 
+from .utils import VLLM_MODEL, OpenRouter_Model, Agent
+from .config import BASE_MODEL_NAME, BASE_MODEL_URL, FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL
 
 
 # OpenRouter Model Names

@@ -1,21 +1,27 @@
 # Evaluator Model 
-import anthropic
-from anthropic import Anthropic 
-from os import getenv 
-import torch
-import transformers
-from huggingface_hub import login
-from openai import OpenAI
 import os
+import torch
+import anthropic
+import transformers
+from os import getenv 
+from openai import OpenAI
+from anthropic import Anthropic 
+from huggingface_hub import login
+from anthropic import AsyncAnthropic
 
-HF_TOKEN = getenv("HF_TOKEN")
-ANTHROPIC_API_KEY = "YOUR_API_KEY"
-OPENAI_API_KEY = "YOUR_API_KEY"
-OPENROUTER_API_KEY = "OPENROUTER_API_KEY"
+from .config import *
 
-client = Anthropic(api_key=getenv("ANTHROPIC_API_KEY"))
+# Client Initialization & API Logins
+
+HF_TOKEN = getenv("HF_TOKEN") or HF_TOKEN
+
+client = Anthropic(api_key=getenv("ANTHROPIC_API_KEY") or ANTHROPIC_API_KEY)
+
+async_client = AsyncAnthropic(api_key=getenv("ANTHROPIC_API_KEY") or ANTHROPIC_API_KEY)
+
 oai_client = OpenAI(
-    api_key=getenv('OPENAI_API_KEY'))
+    api_key=getenv('OPENAI_API_KEY') or OPENAI_API_KEY)
+
 
 def get_claude_response(prompt):
     """ 
@@ -35,8 +41,7 @@ def get_claude_response(prompt):
     )
     return response.content[0].text
 
-from anthropic import AsyncAnthropic
-async_client = AsyncAnthropic(api_key=getenv("ANTHROPIC_API_KEY"))
+
 
 async def get_claude_response_async(prompt):
     """ 
@@ -75,7 +80,6 @@ def get_oai_response(prompt, system_prompt = "You are a helpful assistant that a
 # Load HF-FineTuned CheckPoint model and serve with vLLM 
 try:
     from vllm import SamplingParams, LLM
-    login(token=HF_TOKEN)
 
     class HFModel:
         def __init__(self, model_name="Ksgk-fy/ecoach_philippine_v2_merge"):
@@ -101,7 +105,6 @@ except ImportError:
 try:
     import pyreft
     from pyreft import ReftModel
-    login(token=HF_TOKEN)
 
     class ReftInferenceModel:
             

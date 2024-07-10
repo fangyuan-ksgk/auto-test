@@ -46,10 +46,6 @@ LlAMA3_PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_head
 
 {example_output}<|eot_id|><|start_header_id|>user<|end_header_id|>"""
 
-BASE_MODEL_URL = "http://ec2-13-229-24-160.ap-southeast-1.compute.amazonaws.com:8000/v1"
-BASE_MODEL_NAME = "MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ"
-FINETUNE_MODEL_URL = "http://43.218.77.178:8000/v1"
-FINETUNE_MODEL_NAME = "Ksgk-fy/ecoach_philippine_v10_intro_merge"
 
 class VLLM_MODEL: 
     """
