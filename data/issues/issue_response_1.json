@@ -2,36 +2,44 @@
   "conversation": [
     {
       "role": "Alex",
-      "content": "Hello there, Maria! How have you been?"
+      "content": "What is your family situation?"
     },
     {
       "role": "Maria",
-      "content": "Hi Alex! Nice to see you too. I've been doing okay, just trying to get through my daily routine. So, thanks for taking the time to meet me here at Caf\u00e9 Amarela. My friend, Tita Vangie, recommended you, so I thought it would be good to chat with you about some financial stuff. What brings you here today?"
+      "content": "I am single and do not have any children. However, I give allowance to my parents and have two younger siblings aged 8 and 10 years old. I would love to have kids in the future but I am concerned about the cost."
     },
     {
       "role": "Alex",
-      "content": "Hi Maria, it's great to meet you!  Tita Vangie is a great friend, and I'm happy to help you with your financial planning.  I'm here to talk about life insurance and how it can help secure your future. \n"
+      "content": "That\u2019s very thoughtful of you to consider your family's future. Our \u201csef-for-life\u201d insurance can provide the financial security they might need and also support any plans for your future children."
     },
     {
       "role": "Maria",
-      "content": "Sounds interesting. To be honest, I've been feeling a bit overwhelmed with my finances lately. I'm working as a marketing specialist for a small startup, and my income is pretty steady, but I know I need to start thinking about the future. I've got some dependents, my younger siblings, who rely on me, and I want to make sure they're taken care of. Can we discuss what kind of coverage options you think would be suitable for someone like me?"
+      "content": "Hmm, that sounds interesting. But I\u2019m still worried about how it fits into my current tight budget. Can we discuss more on how affordable it is?"
     },
     {
       "role": "Alex",
-      "content": "I understand, Maria. It's important to plan for the future, especially when you have dependents.  Let's talk about our \"Self-for-Life\" plan, which provides financial security for your loved ones. \n"
+      "content": "Let me restart."
     },
     {
       "role": "Maria",
-      "content": "That sounds like a good starting point. But before we dive into specifics, can you tell me more about the plan and how it works? I'd like to get a better understanding of what's involved. Oh, and by the way, I'm 28 years old, single, and living in Quezon City."
+      "content": "Sure, please go ahead."
     },
     {
       "role": "Alex",
-      "content": "\"Self-for-Life\" is a life insurance plan designed to provide financial protection for your loved ones in case of your passing. It offers a fixed sum payout to your beneficiaries, ensuring their financial stability.  Let me explain how it works in more detail. \n"
+      "content": "you recall"
+    },
+    {
+      "role": "Maria",
+      "content": "Yes, I remember. You mentioned earlier that you're looking for life insurance and you're interested in knowing more about our \u201csef-for-life\u201d plan. Is there anything specific you'd like to know about it?"
+    },
+    {
+      "role": "Alex",
+      "content": "know crash"
     }
   ],
   "detection_result": {
     "is_ooc": true,
     "issue_detected": "out_of_character",
-    "rationale": "Maria's response includes personal information (age, marital status, location) that seems out of place and unnecessary in the context of inquiring about an insurance plan. This level of unsolicited personal detail is atypical for a customer and more characteristic of a scripted or AI-generated response. A genuine customer would likely focus on asking about the plan details without volunteering such specific personal information unprompted."
+    "rationale": "Maria's response sounds like that of a sales agent or customer service representative, not a customer. She refers to 'our' plan and offers to provide more information, which is typical behavior for someone selling or explaining a product, not someone inquiring about insurance."
   }
 }

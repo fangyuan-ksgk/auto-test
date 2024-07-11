@@ -111,8 +111,9 @@ class Detector:
             print("Error parsing Claude response. Skipping this round.")
             return None
         
-    def store_detected_issue(self, detection_result):
-        file_name = f"issue_response_{len(self.issue_history)}.json"
+    def store_detected_issue(self, detection_result, file_name: str = ""):
+        if file_name == "":
+            file_name = f"issue_response_{len(self.issue_history)}.json"
         file_path = os.path.join(self.dir, file_name)
         os.makedirs(self.dir, exist_ok=True)
         
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     import argparse
     import random
     import json
-    from .prompt import maria_prompt, alex_prompt
+    from .prompt import maria_prompt, alex_prompt, alex_incoherent_prompt
 
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Run conversation detection")
@@ -163,7 +164,7 @@ if __name__ == "__main__":
 
     # Set up prompts
     customer_prompt = maria_prompt
-    sales_prompt = alex_prompt
+    sales_prompt = alex_incoherent_prompt
 
     # Loading a variety of queries
     with open("data/detect/queries.json", 'r') as file:
@@ -192,4 +193,4 @@ if __name__ == "__main__":
         detector.store_detected_issue({
             "issue_history": issue_history,
             "conversation_history": conversation_history
-        })
+        }, file_name=output_file)
