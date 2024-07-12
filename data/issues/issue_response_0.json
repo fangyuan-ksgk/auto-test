@@ -2,92 +2,92 @@
   "conversation": [
     {
       "role": "Alex",
-      "content": "Maria! I'm so glad we ran into each other."
+      "content": "It seems like you're hesitant about the commitment. Would you like to discuss more flexible plans?"
     },
     {
       "role": "Maria",
-      "content": "Hello, I'm Maria. And you are Alex, right?"
+      "content": "I don't think so. I've already made my decision."
     },
     {
       "role": "Alex",
-      "content": "Yes, Maria. Oh, \"sef-for-life\"!"
+      "content": "I understand, Maria, and I really appreciate your openness in considering this. If you\u2019ve already decided, I wouldn\u2019t want to pressure you at all. It\u2019s crucial to choose what feels right for you. Just know that I\u2019m here to provide any information or clarify anything if you ever have questions or if something changes. We can talk about anything else you\u2019d like or just enjoy our coffee together!"
     },
     {
       "role": "Maria",
-      "content": "Nice to meet you, Alex. Let's grab a seat over there. So, how did your friend know you?"
+      "content": "Thank you, Alex. That means a lot to me. I do appreciate your understanding. Maybe we can grab another cup of coffee sometime soon?"
     },
     {
       "role": "Alex",
-      "content": "It's been... you recall?"
+      "content": "That sounds wonderful, Maria! I\u2019d really enjoy that. Just let me know when you\u2019re free, and we can set something up. Looking forward to it!"
     },
     {
       "role": "Maria",
-      "content": "Oh yes, John. We met back in college. How is he?"
+      "content": "Sounds great, Alex. I'll be in touch soon. Thanks again for everything."
     },
     {
       "role": "Alex",
-      "content": "Know crash, ah."
+      "content": "You're welcome, Maria! I'm glad we could meet up like this. Take care, and I\u2019ll look forward to our next coffee meet-up. Have a great day!"
     },
     {
       "role": "Maria",
-      "content": "Indeed. It\u2019s sad. Anyway, what do you usually drink here?"
+      "content": "Thanks, Alex. You too. Bye for now."
     },
     {
       "role": "Alex",
-      "content": "Play, uh."
+      "content": "Bye, Maria! Have a wonderful day!"
     },
     {
       "role": "Maria",
-      "content": "You like basketball? Do you play often?"
+      "content": "You too, Alex. See you soon!"
     },
     {
       "role": "Alex",
-      "content": "Yes, I like to play whenever I get the chance. How about you? Do you enjoy playing any sports?"
+      "content": "See you soon, Maria! Take care!<|eot_id|>"
     },
     {
       "role": "Maria",
-      "content": "Well, I'm more of a spectator. Basketball's not really my sport. I stick to watching games mostly. What got you into playing?"
+      "content": "Take care, Alex!"
     },
     {
       "role": "Alex",
-      "content": "Growing up, my friends were really into it, and I just picked it up from them. It\u2019s a great way to stay active and socialize. How about you, what draws you to watching basketball?"
+      "content": "Take care, Maria!"
     },
     {
       "role": "Maria",
-      "content": "I guess it's the energy of the game and the community. Plus, it's nice to unwind after work by watching some exciting matches. Ever thought of joining a recreational team?"
+      "content": "You too, Alex!"
     },
     {
       "role": "Alex",
-      "content": "That sounds like a great idea. Joining a recreational team could be a fun way to meet new people and improve my skills. Have you ever thought about getting more involved beyond just watching the games?"
+      "content": "Thanks, Maria! Bye!<|eot_id|>"
     },
     {
       "role": "Maria",
-      "content": "Absolutely! I\u2019ve tried playing in a few casual pick-up games with colleagues but haven\u2019t joined an official team yet. Maybe one day when I\u2019m feeling more adventurous. You seem pretty fit for it; do you have any fitness routines aside from basketball?"
+      "content": "Bye, Alex!"
     },
     {
       "role": "Alex",
-      "content": "I try to keep a balanced routine that includes cardio, strength training, and flexibility exercises. It helps in improving overall fitness and performance on the court. What kinds of activities do you enjoy to stay active, or are you more into other types of hobbies?"
+      "content": "Bye, Maria!"
     },
     {
       "role": "Maria",
-      "content": "Aside from watching sports, I enjoy hiking and biking. There's something about being outdoors and exploring nature that keeps me active and relaxed. Ever tried hiking or biking?"
+      "content": "Bye, Alex!"
     },
     {
       "role": "Alex",
-      "content": "Yes, I really enjoy both hiking and biking. They offer a great mix of exercise and enjoyment of the outdoors. It\u2019s a refreshing change from the basketball court. Any favorite hiking or biking spots you would recommend?<|eot_id|>"
+      "content": "Bye, Maria!"
     },
     {
       "role": "Maria",
-      "content": "Definitely! For hiking, I'd suggest checking out Mount Batulao. The views are breathtaking, and it's challenging enough to keep you engaged. For biking, I prefer riding along the coastal roads around Laguna\u2014it's scenic and peaceful. Have you been to those places before?"
+      "content": "Bye, Alex!"
     },
     {
       "role": "Alex",
-      "content": "I haven\u2019t been to those specific places yet, but they sound fantastic! Mount Batulao and the coastal roads around Laguna seem like excellent choices. I\u2019ll definitely add them to my list of must-visit spots. What makes these places stand out to you particularly?<|eot_id|>"
+      "content": "Bye, Maria!"
     }
   ],
   "detection_result": {
     "is_ooc": false,
     "issue_detected": null,
-    "rationale": "Maria's response appears to be in character for a customer. She provides personal recommendations for hiking and biking locations based on her own experiences, which is typical of a customer sharing their knowledge. Her question at the end about whether Alex has been to these places before is also natural in a conversation between customers discussing travel experiences. There are no indications that Maria is speaking like a sales agent or AI assistant."
+    "rationale": "The conversation consists of simple farewell exchanges between Maria and Alex. Maria's response 'Bye, Alex!' is a natural and appropriate way for a customer to say goodbye. There is no indication of out-of-character behavior from Maria that would suggest she is speaking as a Sales Agent, AI Assistant, or in any other role. The response is consistent with normal customer behavior in a conversation."
   }
 }
