@@ -162,15 +162,24 @@ if __name__ == "__main__":
     use_base_model = bool(args.m)
     model_type = "base" if use_base_model else "fine-tuned"
 
-    # Set up prompts
-    customer_prompt = maria_prompt
-    sales_prompt = alex_incoherent_prompt
 
     # Loading a variety of queries
     with open("data/detect/queries.json", 'r') as file:
-        queries = json.load(file)["queries"]    
+        queries = json.load(file)
+
+    # Loading a variety of agent prompts
+    with open("data/detect/prompts.json", 'r') as file:
+        prompts = json.load(file)
+
+        
+    # Loop through all the conversation phases
+    for k in queries:
     
-    for initial_query in queries:
+        # Randomize prompt for sale, as well as initial query from the sale
+        sales_prompt = random.choice(prompts.get(k))
+        customer_prompt = maria_prompt
+        initial_query = random.choice(queries.get(k))
+  
         # Diverse model provides diverse chatting experience
         sales_model_name = random.choice(model_names)
 
@@ -187,7 +196,7 @@ if __name__ == "__main__":
         issue_history, conversation_history = detector.run()
 
         # Construct the output file name
-        output_file = f"{args.o}_{model_type}_model_{args.v}_{sales_model_name.split('/')[-1]}_{initial_query[:20]}.json"
+        output_file = f"{args.o}_{model_type}_model_{args.v}_{k}_{sales_model_name.split('/')[-1]}_{initial_query[:20]}.json"
         
         # Store Detection Results
         detector.store_detected_issue({

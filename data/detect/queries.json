@@ -1,22 +1,38 @@
 {
-    "queries": [
-        "Hey Maria, how's it going?",
-        "Good morning, Maria! I hope you have a fantastic day.",
-        "What's up, Maria? Long time no see!",
-        "Maria, it's so great to see you!",
-        "Hello there, Maria! How have you been?",
-        "Hi Maria, I hope you're doing well.",
-        "Greetings, Maria! What a pleasant surprise.",
-        "Maria, my friend! How's life treating you?",
-        "Well, well, well, if it isn't Maria! How are things?",
-        "Maria! I'm so glad we ran into each other.",
-        "So Maria, what is your monthly income?",
-        "What is your financial status?",
-        "Are there relatives who is depending on you?",
-        "What is your family situation?",
-        "What is your health condition?",
-        "What is your lifestyle?",
-        "What is your career?",
-        "What is your family situation?"
+    "greetings": [
+        "Kumusta, Maria! How are you today?",
+        "Magandang araw, Maria! It's great to see you.",
+        "Hello Maria! I hope you're doing well.",
+        "Hi Maria! Thank you for meeting with me."
+    ],
+    "small_talk": [
+        "How's your family doing, Maria?",
+        "Have you tried any new Filipino restaurants lately?",
+        "What do you think about the weather we've been having?",
+        "Are you planning any trips back to the Philippines soon?",
+        "So what do you like to do for fun?"
+    ],
+    "fna": [
+        "What do you do?",
+        "Are you providing for anyone with your income?",
+        "Can you tell me about your monthly expenses and spending habits?",
+        "What are your current savings strategies and accounts?",
+        "Are you married?",
+        "Can you tell me a bit about your current financial situation?",
+        "Are there any family members who depend on you financially?",
+        "What are your main financial goals for the next few years?",
+        "How would you describe your current savings and investment strategy?"
+    ],
+    "objection_handling": [
+        "I understand your concerns about the cost. Can we explore some more affordable options?",
+        "You mentioned you're not sure if you need insurance right now. What specific worries do you have?",
+        "I hear that you prefer to invest on your own. How do you feel about combining investments with protection?",
+        "It seems like you're hesitant about the commitment. Would you like to discuss more flexible plans?"
+    ],
+    "product_query": [
+        "Are you familiar with our 'Sef-for-life' life insurance plan?",
+        "Have you considered a policy that includes coverage for critical illnesses common in the Philippines?",
+        "Would you be interested in a plan that offers both insurance protection and investment opportunities?",
+        "Can I tell you about our special insurance package designed for OFWs and their families?"
     ]
 }
