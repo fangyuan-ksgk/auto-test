@@ -81,6 +81,7 @@ class Detector:
             for msg in self.conversation_history
         ]
         return mapped_conversation
+    
         
     def detect_issue(self):
         # use sonnet to detect issues
@@ -101,13 +102,13 @@ class Detector:
                 self.store_detected_issue(reflect_issue)
                 return reflect_issue
             
-        last_two_messages = [f"{msg['role']}: {stripped}" for msg, stripped in zip(last_two_messages, stripped_messages)]
+        last_two_conversation = [f"{msg['role']}: {stripped}" for msg, stripped in zip(last_two_messages, stripped_messages)]
 
         claude_prompt = f"""
         Analyze the following conversation for out-of-character behavior or other issues:
-        
-        {json.dumps(last_two_messages, indent=2)}
-        
+
+        {last_two_conversation}
+                
         Detect any of the following issues: {', '.join([f"Name: {issue['name']}, Description: {issue['description']}" for issue in self.detection_issues])}
         
         Respond with a JSON object in the following format:
