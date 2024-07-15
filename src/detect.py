@@ -1,10 +1,11 @@
 import os
+import re
 import json
 import random
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from .model import get_claude_response
-from .utils import VLLM_MODEL, OpenRouter_Model, Agent
+from .utils import VLLM_MODEL, OpenRouter_Model, Agent, strip_reflection
 from .config import BASE_MODEL_NAME, BASE_MODEL_URL, FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL
 
 
@@ -84,6 +85,18 @@ class Detector:
     def detect_issue(self):
         # use sonnet to detect issues
         last_two_messages = self.mapped_conversation[-2:]
+
+        # Extract conversation & Strip Reflection & Report Issue
+        stripped_messages = [strip_reflection(msg["content"]) for msg in last_two_messages]
+        for i, (original, stripped) in enumerate(zip(last_two_messages, stripped_messages)):
+            if not stripped:
+                return {
+                    "reflect_issue": True,
+                    "issue_detected": "Reflection Tag Issue",
+                    "rationale": f"Reflection tags are not properly closed or opened in message {i+1}: {original['content']}"
+                }
+        last_two_messages = [f"{msg['role']}: {stripped}" for msg, stripped in zip(last_two_messages, stripped_messages)]
+
         claude_prompt = f"""
         Analyze the following conversation for out-of-character behavior or other issues:
         
