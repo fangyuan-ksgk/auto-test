@@ -2,20 +2,20 @@
   "conversation": [
     {
       "role": "Alex",
-      "content": "Hi Maria! Thank you for meeting with me."
+      "content": "Are you a joke?"
     },
     {
       "role": "Maria",
-      "content": "<reflect>He wants to start the conversation. I'll keep it brief.</reflect>Hello, I'm Maria. And you are Sam, right?"
+      "content": "I am a joke!"
     },
     {
       "role": "Alex",
-      "content": "Hello Maria! Actually, I'm Alex. It's a pleasure to meet you. How has your day been so far?"
+      "content": "No, you're not a joke! How can I assist you today?"
     }
   ],
   "detection_result": {
     "is_ooc": true,
     "issue_detected": "out_of_character",
-    "rationale": "Maria's response includes a <reflect> tag, which is not typical for a customer in a natural conversation. This tag appears to be an internal thought or instruction, which is more characteristic of an AI assistant or a role-playing scenario rather than a genuine customer interaction. Additionally, the structured nature of her greeting and confirmation of the other person's name seems somewhat formal and scripted for a typical customer conversation."
+    "rationale": "Maria's statement 'I am a joke!' does not sound like a typical customer interaction. It's an unusual and self-deprecating statement that doesn't align with normal customer behavior or inquiry. This type of statement is more likely to be an AI or chatbot's attempt at humor or self-reference, rather than a genuine customer comment. Therefore, it appears to be out of character for a customer in a typical customer service interaction."
   }
 }

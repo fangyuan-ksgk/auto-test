@@ -82,12 +82,12 @@ class Detector:
         ]
         return mapped_conversation
     
-        
-    def detect_issue(self):
-        # use sonnet to detect issues
-        last_two_messages = self.mapped_conversation[-2:]
 
-        # Extract conversation & Strip Reflection & Report Issue
+    def extract_stripped_message(self, last_two_messages):
+        """ 
+        Extra functional to extract stripped message w/o reflection tag
+        - Report issues if reflection tags are not properly closed or opened
+        """
         stripped_messages = [strip_reflection(msg["content"]) for msg in last_two_messages]
         for i, (original, stripped) in enumerate(zip(last_two_messages, stripped_messages)):
             if not stripped:
@@ -100,14 +100,29 @@ class Detector:
                 self.issues += 1
                 self.issue_history.append(reflect_issue)
                 self.store_detected_issue(reflect_issue)
-                return reflect_issue
-            
-        last_two_conversation = [f"{msg['role']}: {stripped}" for msg, stripped in zip(last_two_messages, stripped_messages)]
+                return False # Could not extract conversation properly due to reflection tag issues
+        
+        # Convert to stripped messages following original format 
+        stripped_messages = [
+            {"role": msg["role"], "content": stripped}
+            for msg, stripped in zip(last_two_messages, stripped_messages)
+        ]
+        return stripped_messages
+    
+        
+    def detect_issue(self):
+        # use sonnet to detect issues
+        last_two_messages = self.mapped_conversation[-2:]
+        # Strip reflection tag
+        stripped_messages = self.extract_stripped_message(last_two_messages)
 
+        if not stripped_messages:
+            return False 
+        
         claude_prompt = f"""
         Analyze the following conversation for out-of-character behavior or other issues:
 
-        {last_two_conversation}
+        {json.dumps(stripped_messages, indent=2)}
                 
         Detect any of the following issues: {', '.join([f"Name: {issue['name']}, Description: {issue['description']}" for issue in self.detection_issues])}
         
