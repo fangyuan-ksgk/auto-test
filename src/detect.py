@@ -90,11 +90,17 @@ class Detector:
         stripped_messages = [strip_reflection(msg["content"]) for msg in last_two_messages]
         for i, (original, stripped) in enumerate(zip(last_two_messages, stripped_messages)):
             if not stripped:
-                return {
+                reflect_issue = {
+                    "is_ooc": True,
                     "reflect_issue": True,
                     "issue_detected": "Reflection Tag Issue",
                     "rationale": f"Reflection tags are not properly closed or opened in message {i+1}: {original['content']}"
                 }
+                self.issues += 1
+                self.issue_history.append(reflect_issue)
+                self.store_detected_issue(reflect_issue)
+                return reflect_issue
+            
         last_two_messages = [f"{msg['role']}: {stripped}" for msg, stripped in zip(last_two_messages, stripped_messages)]
 
         claude_prompt = f"""
