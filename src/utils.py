@@ -1,6 +1,5 @@
-import json
-from openai import OpenAI
 import os
+import re
 import json
 import glob
 import random
@@ -8,6 +7,7 @@ from tqdm import tqdm
 from .model import get_oai_response
 from os import getenv 
 from typing import Optional, Union
+from openai import OpenAI
 
 
 def load_requirements(directory="data/attribute"):
@@ -175,3 +175,22 @@ class Agent:
         Reset the conversation history
         """
         self.conversation_history = [{"role":"system", "content":self.system_prompt}]
+
+
+# Reflection Handling Function
+def strip_reflection(text: str) -> str:
+    """ 
+    Strip away the "reflection tag" with pattern together with the implicit thought content, report issues when extracted response is empty
+    - <reflect> thought </reflect> response
+    - obtain response, and return False when such response is empty
+    """
+    pattern = r"<reflect>.*?</reflect>\s*(.*?)(?=<reflect>|$)"
+    matches = re.findall(pattern, text, re.DOTALL)
+    
+    if not matches:
+        if "<reflect>" in text or "</reflect>" in text:
+            return False  # Error: Incomplete or malformed reflection tags
+        return text.strip()  # No reflection tags, return original text
+    
+    response = " ".join(match.strip() for match in matches if match.strip())
+    return response if response else False

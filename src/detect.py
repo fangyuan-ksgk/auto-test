@@ -1,10 +1,11 @@
 import os
+import re
 import json
 import random
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from .model import get_claude_response
-from .utils import VLLM_MODEL, OpenRouter_Model, Agent
+from .utils import VLLM_MODEL, OpenRouter_Model, Agent, strip_reflection
 from .config import BASE_MODEL_NAME, BASE_MODEL_URL, FINETUNE_MODEL_NAME, FINETUNE_MODEL_URL
 
 
@@ -80,15 +81,49 @@ class Detector:
             for msg in self.conversation_history
         ]
         return mapped_conversation
+    
+
+    def extract_stripped_message(self, last_two_messages):
+        """ 
+        Extra functional to extract stripped message w/o reflection tag
+        - Report issues if reflection tags are not properly closed or opened
+        """
+        stripped_messages = [strip_reflection(msg["content"]) for msg in last_two_messages]
+        for i, (original, stripped) in enumerate(zip(last_two_messages, stripped_messages)):
+            if not stripped:
+                reflect_issue = {
+                    "is_ooc": True,
+                    "reflect_issue": True,
+                    "issue_detected": "Reflection Tag Issue",
+                    "rationale": f"Reflection tags are not properly closed or opened in message {i+1}: {original['content']}"
+                }
+                self.issues += 1
+                self.issue_history.append(reflect_issue)
+                self.store_detected_issue(reflect_issue)
+                return False # Could not extract conversation properly due to reflection tag issues
+        
+        # Convert to stripped messages following original format 
+        stripped_messages = [
+            {"role": msg["role"], "content": stripped}
+            for msg, stripped in zip(last_two_messages, stripped_messages)
+        ]
+        return stripped_messages
+    
         
     def detect_issue(self):
         # use sonnet to detect issues
         last_two_messages = self.mapped_conversation[-2:]
+        # Strip reflection tag
+        stripped_messages = self.extract_stripped_message(last_two_messages)
+
+        if not stripped_messages:
+            return False 
+        
         claude_prompt = f"""
         Analyze the following conversation for out-of-character behavior or other issues:
-        
-        {json.dumps(last_two_messages, indent=2)}
-        
+
+        {json.dumps(stripped_messages, indent=2)}
+                
         Detect any of the following issues: {', '.join([f"Name: {issue['name']}, Description: {issue['description']}" for issue in self.detection_issues])}
         
         Respond with a JSON object in the following format:
@@ -149,7 +184,8 @@ if __name__ == "__main__":
     import argparse
     import random
     import json
-    from .prompt import maria_prompt, alex_prompt, alex_incoherent_prompt
+    from .prompt import maria_prompt_v016e as maria_prompt
+    from .prompt import alex_prompt, alex_incoherent_prompt
 
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Run conversation detection")
@@ -173,33 +209,34 @@ if __name__ == "__main__":
 
         
     # Loop through all the conversation phases
+    max_rep = 5
     for k in queries:
-    
-        # Randomize prompt for sale, as well as initial query from the sale
-        sales_prompt = random.choice(prompts.get(k))
-        customer_prompt = maria_prompt
-        initial_query = random.choice(queries.get(k))
-  
-        # Diverse model provides diverse chatting experience
-        sales_model_name = random.choice(model_names)
+        for i in range(max_rep):
+            # Randomize prompt for sale, as well as initial query from the sale
+            sales_prompt = random.choice(prompts.get(k))
+            customer_prompt = maria_prompt
+            initial_query = random.choice(queries.get(k))
+      
+            # Diverse model provides diverse chatting experience
+            sales_model_name = random.choice(model_names)
 
-        # Create the detector
-        detector = Detector.make(
-            use_customer_base=use_base_model,
-            sales_model_name=sales_model_name,
-            customer_prompt=customer_prompt,
-            sales_prompt=sales_prompt,
-            initial_query=initial_query,
-        )
+            # Create the detector
+            detector = Detector.make(
+                use_customer_base=use_base_model,
+                sales_model_name=sales_model_name,
+                customer_prompt=customer_prompt,
+                sales_prompt=sales_prompt,
+                initial_query=initial_query,
+            )
 
-        # Run the detection
-        issue_history, conversation_history = detector.run()
+            # Run the detection
+            issue_history, conversation_history = detector.run()
 
-        # Construct the output file name
-        output_file = f"{args.o}_{model_type}_model_{args.v}_{k}_{sales_model_name.split('/')[-1]}_{initial_query[:20]}.json"
-        
-        # Store Detection Results
-        detector.store_detected_issue({
-            "issue_history": issue_history,
-            "conversation_history": conversation_history
-        }, file_name=output_file)
+            # Construct the output file name
+            output_file = f"{args.o}_{model_type}_model_{args.v}_{k}_{sales_model_name.split('/')[-1]}_{initial_query[:20]}.json"
+            
+            # Store Detection Results
+            detector.store_detected_issue({
+                "issue_history": issue_history,
+                "conversation_history": conversation_history
+            }, file_name=output_file)
