@@ -184,7 +184,7 @@ if __name__ == "__main__":
     import argparse
     import random
     import json
-    from .prompt import maria_prompt_v016e as maria_prompt
+    from .prompt import maria_prompt_v016h as maria_prompt
     from .prompt import alex_prompt, alex_incoherent_prompt
 
     # Set up argument parser

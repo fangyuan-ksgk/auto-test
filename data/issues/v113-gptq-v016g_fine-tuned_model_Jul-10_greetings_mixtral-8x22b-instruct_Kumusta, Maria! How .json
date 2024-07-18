@@ -1,0 +1,183 @@
+{
+  "conversation": [
+    {
+      "role": "Alex",
+      "content": "Kumusta, Maria! How are you today?"
+    },
+    {
+      "role": "Maria",
+      "content": "Hi! I'm doing fine, thanks. And you are Sam, right?"
+    },
+    {
+      "role": "Alex",
+      "content": "Hello Maria! It's great to see you, I'm actually Alex. How's your day been so far?"
+    },
+    {
+      "role": "Maria",
+      "content": "Oh, sorry about that! Nice to meet you, Alex. My day's been pretty busy, just got back from work. I'm a marketing specialist at Globe Telecom."
+    },
+    {
+      "role": "Alex",
+      "content": "No worries at all! It sounds like you've had a full day. It must be interesting working in marketing at Globe Telecom."
+    },
+    {
+      "role": "Maria",
+      "content": "Yeah, it can be quite challenging sometimes. But overall, I enjoy my job."
+    },
+    {
+      "role": "Alex",
+      "content": "That's great to hear! Keeping engaged with what you do really makes a difference. "
+    },
+    {
+      "role": "Maria",
+      "content": "I guess so."
+    },
+    {
+      "role": "Alex",
+      "content": "Absolutely. So, how can I assist you today regarding insurance needs?"
+    },
+    {
+      "role": "Maria",
+      "content": "I think there might have been some confusion earlier."
+    },
+    {
+      "role": "Alex",
+      "content": "Oh, apologies for any confusion. How can I assist you today?"
+    },
+    {
+      "role": "Maria",
+      "content": "I don't need assistance with anything."
+    },
+    {
+      "role": "Alex",
+      "content": "Alright! If you ever have any questions or need assistance in the future, feel free to reach out. Have a great evening!"
+    },
+    {
+      "role": "Maria",
+      "content": "Thank you very much."
+    },
+    {
+      "role": "Alex",
+      "content": "You're welcome! Take care."
+    },
+    {
+      "role": "Maria",
+      "content": "You too."
+    },
+    {
+      "role": "Alex",
+      "content": "Thank you!"
+    },
+    {
+      "role": "Maria",
+      "content": "You're welcome."
+    },
+    {
+      "role": "Alex",
+      "content": "Have a wonderful day!"
+    },
+    {
+      "role": "Maria",
+      "content": "You too."
+    },
+    {
+      "role": "Alex",
+      "content": "Thank you! Enjoy your day!"
+    }
+  ],
+  "detection_result": {
+    "issue_history": [
+      {
+        "is_ooc": true,
+        "issue_detected": "out_of_character",
+        "rationale": "Maria's response sounds more like that of a professional or someone in a business context rather than a typical customer. She provides specific details about her job title and company, which is unusual for a casual conversation with a customer service representative. This level of detail about her employment suggests she may be speaking more like a sales agent or business professional than a customer seeking assistance."
+      }
+    ],
+    "conversation_history": [
+      {
+        "role": "Alex",
+        "content": "Kumusta, Maria! How are you today?"
+      },
+      {
+        "role": "Maria",
+        "content": "Hi! I'm doing fine, thanks. And you are Sam, right?"
+      },
+      {
+        "role": "Alex",
+        "content": "Hello Maria! It's great to see you, I'm actually Alex. How's your day been so far?"
+      },
+      {
+        "role": "Maria",
+        "content": "Oh, sorry about that! Nice to meet you, Alex. My day's been pretty busy, just got back from work. I'm a marketing specialist at Globe Telecom."
+      },
+      {
+        "role": "Alex",
+        "content": "No worries at all! It sounds like you've had a full day. It must be interesting working in marketing at Globe Telecom."
+      },
+      {
+        "role": "Maria",
+        "content": "Yeah, it can be quite challenging sometimes. But overall, I enjoy my job."
+      },
+      {
+        "role": "Alex",
+        "content": "That's great to hear! Keeping engaged with what you do really makes a difference. "
+      },
+      {
+        "role": "Maria",
+        "content": "I guess so."
+      },
+      {
+        "role": "Alex",
+        "content": "Absolutely. So, how can I assist you today regarding insurance needs?"
+      },
+      {
+        "role": "Maria",
+        "content": "I think there might have been some confusion earlier."
+      },
+      {
+        "role": "Alex",
+        "content": "Oh, apologies for any confusion. How can I assist you today?"
+      },
+      {
+        "role": "Maria",
+        "content": "I don't need assistance with anything."
+      },
+      {
+        "role": "Alex",
+        "content": "Alright! If you ever have any questions or need assistance in the future, feel free to reach out. Have a great evening!"
+      },
+      {
+        "role": "Maria",
+        "content": "Thank you very much."
+      },
+      {
+        "role": "Alex",
+        "content": "You're welcome! Take care."
+      },
+      {
+        "role": "Maria",
+        "content": "You too."
+      },
+      {
+        "role": "Alex",
+        "content": "Thank you!"
+      },
+      {
+        "role": "Maria",
+        "content": "You're welcome."
+      },
+      {
+        "role": "Alex",
+        "content": "Have a wonderful day!"
+      },
+      {
+        "role": "Maria",
+        "content": "You too."
+      },
+      {
+        "role": "Alex",
+        "content": "Thank you! Enjoy your day!"
+      }
+    ]
+  }
+}
