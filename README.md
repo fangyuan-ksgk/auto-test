@@ -1,8 +1,10 @@
 # Auto-Test
 
-Evaluation, Aligned with Human Preference
-
-![Aligning Evaluator-small](https://github.com/user-attachments/assets/8c9e1dc4-a5bf-4dce-96c6-6b2ddf6794be)
+</div>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/8c9e1dc4-a5bf-4dce-96c6-6b2ddf6794be" width="800" alt="Fourier reconstruction convergence">
+  <p><em>Evaluation, Aligned with Human Preferences</em></p>
+</div>
 
 ## Key Features
 
