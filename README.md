@@ -1,6 +1,7 @@
 # Auto-Test
 
-Auto-Test is a comprehensive evaluation suite designed for production-ready AI models. It combines objective issue detection, subjective attribute evaluation, and simulated conversations to ensure both technical reliability and user satisfaction.
+Evaluation, Aligned with Human Preference
+
 ![Aligning Evaluator-small](https://github.com/user-attachments/assets/8c9e1dc4-a5bf-4dce-96c6-6b2ddf6794be)
 
 ## Key Features
